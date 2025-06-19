@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Voice Room Dashboard</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inria+Sans&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo-container">
+                <img src="{{ url_for('static', filename='images/mlogo.png') }}" alt="Mosaique Logo" class="mlogo">
+            </div>
+            <div class="notifications">
+                <div class="icon umnute" onclick="unmuteAll()">
+                    <img src="{{ url_for('static', filename='images/unmuteall.png') }}" class="unmute" alt="alarm">
+                </div>
+                <div class="icon mute" onclick="muteAll()">
+                    <img src="{{ url_for('static', filename='images/mute.png') }}" alt="alarm">
+                </div>
+                <div class="icon logout" onclick="logout()">
+                    <img src="{{ url_for('static', filename='images/logout.png') }}" alt="alarm">
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="row">
+                <!-- Room Tiles -->
+                <div class="col-md-4">
+                    <div class="tile" id="conferenceRoom">
+                        <div class="d-flex justify-content-between">
+                            <h3 class="room-name">Conference Room</h3>
+                            <!-- <label class="toggle-switch">
+                                <input type="checkbox" id="switchConference" class="mic-toggle" onchange="updateListeningCount()">
+                                <span class="slider round"></span>
+                            </label> -->
+                            <label class="rb">
+                              <input type="checkbox" checked="checked">
+                              <span class="checkmark"></span>
+                            </label><br>
+                        </div>
+                        <img src="{{ url_for('static', filename='images/muteunmute.png') }}" alt="Mic" class="mic" onclick="toggleMic('conferenceRoom')"><br>
+                        <label class="toggle-switch">
+                            <input type="checkbox"id="switchConference" class="mic-toggle" onchange="updateListeningCount()">
+                            <span class="slider round" ></span>
+                          </label>  
+                        <div class="battery-status">
+                            <p>Battery: <span class="battery-percentage">70%</span></p>
+                            <div class="battery-bar">
+                                <div class="battery-level" style="width: 70%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="tile" id="adminRoom">
+                        <div class="d-flex justify-content-between">
+                            <h3>Admin Room</h3>
+                            <!-- <label class="toggle-switch">
+                                <input type="checkbox" id="switchAdmin"  >
+                                <span class="slider round"></span>
+                            </label> -->
+                            <label class="rb">
+                              <input type="checkbox" checked="checked">
+                              <span class="checkmark"></span>
+                            </label><br>
+                             
+                        </div>
+                        <img src="{{ url_for('static', filename='images/muteunmute.png') }}" alt="Mic" class="mic" onclick="toggleMic('adminRoom')"><br>
+                        <label class="toggle-switch">
+                            <input type="checkbox"id="switchAdmin" class="mic-toggle" onchange="updateListeningCount()">
+                            <span class="slider round" ></span>
+                          </label> 
+                        <div class="battery-status">
+                            <p>Battery: <span class="battery-percentage">80%</span></p>
+                            <div class="battery-bar">
+                                <div class="battery-level" style="width: 80%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="tile" id="classRoom">
+                        <div class="d-flex justify-content-between">
+                            <h3>Class Room</h3>
+                            <!-- <label class="toggle-switch">
+                                <input type="checkbox"  class="mic-toggle" onchange="updateListeningCount()">
+                                <span class="slider round"></span>
+                            </label> -->
+                            <label class="rb">
+                              <input type="checkbox" checked="checked">
+                              <span class="checkmark"></span>
+                            </label><br>
+                             
+                        </div>
+                        <img src="{{ url_for('static', filename='images/muteunmute.png') }}" alt="Mic" class="mic" onclick="toggleMic('classRoom')"><br>
+                        <label class="toggle-switch">
+                            <input type="checkbox"id="switchClass" class="mic-toggle" onchange="updateListeningCount()">
+                            <span class="slider round" ></span>
+                          </label> 
+                        <div class="battery-status">
+                            <p>Battery: <span class="battery-percentage">90%</span></p>
+                            <div class="battery-bar">
+                                <div class="battery-level" style="width: 90%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Survey Container -->
+            <div class="survey-container">
+                <div class="survey-grid">
+                    <div class="survey-title">Survey</div>
+                    <div class="rooms-listening">Rooms Listening: <span id="listeningCount">0</span></div>
+                    <div class="volume-control">
+                        <label for="volumeConference" class="rmtitle">Conference Room Volume:</label>
+                        <input type="range" id="volumeConference" class="volume-slider" min="0" max="100" value="50" onchange="updateAllRoomVolume()">
+                    </div>
+                    <div class="volume-control">
+                        <label for="volumeAdmin" class="rmtitle">Admin Room Volume:</label>
+                        <input type="range" id="volumeAdmin" class="volume-slider" min="0" max="100" value="50" onchange="updateAllRoomVolume()">
+                    </div>
+                    <div class="volume-control">
+                        <label for="volumeClass" class="rmtitle">Class Room Volume:</label>
+                        <input type="range" id="volumeClass" class="volume-slider" min="0" max="100" value="50" onchange="updateAllRoomVolume()">
+                    </div>
+                    <!-- <div class="logo-container">
+                        <img src="{{ url_for('static', filename='images/mlogo.png') }}" alt="Mosaique Logo" class="mlogo">
+                    </div> -->
+                    <div class="profile-container">
+                      <img src="{{ url_for('static', filename='images/micimg.png') }}" alt="Mic Icon" class="mic-icon">
+                      <p class="sp-name">Hiro Ishida</p>
+                      <p>CEO</p>
+                  </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/landing.js') }}"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

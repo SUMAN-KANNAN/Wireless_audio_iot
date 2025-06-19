@@ -1,0 +1,328 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #1c1c1c;
+    color: white;
+    margin: 0;
+}
+
+.container-fluid {
+    display: flex;
+    padding: 20px;
+    /* overflow-y: visible; */
+}
+
+.sidebar {
+    /* width: 12%; */
+    width: 20%;
+    background-color: #2a2a2a;
+    padding: 20px;
+    border-radius: 8px;
+    /* overflow-y: auto; */
+    position:center;
+    /* height: 675px; */
+    height: 675px;
+    box-sizing: border-box;
+}
+
+.logo-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+    width: fit-content;
+    height:fit-content;
+}
+.mlogo {
+    width: 150%; /* Adjust logo size as needed */
+    height: auto;
+    position: center;
+    align-items: center;
+    justify-content: center;
+    /* padding: auto; */
+
+}
+
+.notifications {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    /* padding: auto; */
+    position: static;
+    /* padding-left: 25%; */
+    align-items: center;
+    
+}
+
+.notifications .icon {
+    width: auto;
+    height: auto;
+    margin: 10px 0;
+    border-radius: 50%;
+    cursor: pointer;
+    padding: 10px;
+    /* align-items: center;
+    justify-content:center; */
+    padding-left: 20% ;
+    padding-top: 20% ;
+    position: relative;
+    /* position: static; */
+    
+}
+.unmute {
+    width: 50px;
+    height: auto;
+    cursor: pointer;
+}
+
+.main-content {
+    width: 100%;
+    padding: 20px;
+}
+
+.tile {
+    background-color: #3a3a3a;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.room-name {
+    margin: 10px 0; 
+}
+
+.rb {
+    position: relative;
+    padding-left: 7%;
+    padding-right: 5%;
+    margin-bottom: 12px;
+    cursor: pointer;
+    font-size: 22px;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    margin-top: 3%;
+}
+
+.rb input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+/* Create a custom radio button */
+.checkmark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 25px;
+  width: 25px;
+  background-color: #eee;
+  border-radius: 50%;
+}
+
+/* On mouse-over, add a grey background color */
+.rb:hover input ~ .checkmark {
+  background-color: #ccc;
+}
+
+/* When the radio button is checked, add a blue background */
+.rb input:checked ~ .checkmark {
+  background-color: #ffffff;
+}
+
+/* Create the indicator (the dot/circle - hidden when not checked) */
+.checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+/* Show the indicator (dot/circle) when checked */
+.rb input:checked ~ .checkmark:after {
+  display: block;
+}
+
+/* Style the indicator (dot/circle) */
+.rb .checkmark:after {
+  top: 9px;
+  left: 9px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4caf50;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 34px;
+    height: 20px;
+    align-items: center;
+    margin: 10px 0; 
+    /* padding-left: 10%;
+    grid:2/1/span 3; */
+}
+
+/* Hide default HTML checkbox */
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+/* The slider */
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 20px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 12px;
+    width: 12px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #4caf50;
+}
+
+input:focus + .slider {
+    box-shadow: 0 0 1px #4caf50;
+}
+
+input:checked + .slider:before {
+    transform: translateX(14px);
+}
+
+/* Rounded sliders */
+.slider.round {
+    border-radius: 20px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+.mic {
+    width: 50px;
+    height: auto;
+    cursor: pointer;
+    padding-top: 6%;
+}
+
+.battery-status {
+    margin-top: 10px;
+}
+
+.battery-bar {
+    width: 100%;
+    height: 10px;
+    background-color: #ccc;
+    border-radius: 5px;
+}
+
+.battery-level {
+    height: 100%;
+    background-color: #4caf50;
+    border-radius: 5px;
+}
+
+.survey-container {
+    margin-top: 20px;
+    background-color: #3a3a3a;
+    padding: 15px;
+    border-radius: 8px;
+    overflow-y: relative;
+}
+
+.survey-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(6, auto);
+    gap: 10px;
+}
+
+.survey-title {
+    grid-column: 1 / span 2;
+    font-size: 24px;
+    text-align: left;
+}
+
+.rooms-listening {
+    grid-column: 1 / span 2;
+    text-align: left;
+}
+
+.volume-control {
+    grid-column: 1 / span 2;
+    margin-top: 10px;
+    padding-top: 3%;
+}
+
+.volume-slider {
+    width: 120px; /* Set the width of the volume slider to 120px */
+    margin-left: 10%;
+}
+
+.logo-container {
+    grid-column: 3;
+    grid-row: 1 / span 6;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+
+.profile-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #000000;
+    padding: 5px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    padding-top: 10%;
+    overflow-y: auto;
+}
+.profile-container {
+    margin-top: 5%;
+    margin-left: 5%;
+    width: 85%;
+    grid-column: 3;
+    grid-row: 1 / 8;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.mic-icon {
+    width: 25%;
+    height: auto;
+    margin-right: 5px;
+}
+.sp-name{
+    margin-top: 5%;
+    margin-left: 5%;
+    width: 85%;
+    grid-column: 3;
+    grid-row: 1 / 8;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
