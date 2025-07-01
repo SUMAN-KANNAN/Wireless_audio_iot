@@ -1,0 +1,36 @@
+=======================
+HOW TO RUN THIS PROJECT
+=======================
+
+Follow these steps to run the application:
+
+Step 1: Install Dependencies
+----------------------------
+Ensure you have Python and pip installed. Open your terminal in the project directory and install the required packages:
+
+pip install -r requirements.txt
+(Create requirements.txt if needed: pip freeze > requirements.txt)
+
+Step 2: Start the Flask Server
+------------------------------
+In a terminal, navigate to the project directory and run:
+
+python app.py
+
+Step 3: Access and Login to the Dashboard
+--------------------------------------
+Open your web browser and go to http://127.0.0.1:5000. Log in with valid credentials (default: admin/password or user/123).
+
+Step 4: Run the Virtual Devices
+-------------------------------
+Open **three separate terminals** in the project directory and run the following command in each, using a different room ID:
+
+python virtual_esp32.py conferenceRoom
+python virtual_esp32.py adminRoom
+python virtual_esp32.py classRoom
+
+Observe the dashboard in your browser; battery and status should update.
+
+Step 5: Stop the Application
+----------------------------
+Press Ctrl + C in each terminal to stop the server and virtual devices.

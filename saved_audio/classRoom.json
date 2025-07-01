@@ -1,0 +1,10 @@
+{
+  "status": {
+    "room": "classRoom",
+    "status": "Sleep"
+  },
+  "battery": {
+    "room": "classRoom",
+    "percentage": 98
+  }
+}

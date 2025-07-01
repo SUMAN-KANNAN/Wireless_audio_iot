@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/mlogo.png') }}"  sizes="16x16">
+  <title>MOSAIQUE Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inria+Sans&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+</head>
+<body>
+  <div class="login-page">
+    <div class="left-panel">
+      <img src="{{ url_for('static', filename='images/mlogo.png') }}" alt="Mosaique Logo">
+      <h1 class="brand-name">MOSAIQUE</h1>
+      <p class="tagline">wireless audio transmission</p>
+    </div>
+    <div class="right-panel">
+      <div class="login-form-container">
+            {% if error %}
+            <p style="color: red; text-align: center;">{{ error }}</p>
+            {% endif %}
+        <form method="post">
+          <input type="text" name="username" placeholder="Username" class="form-input" required>
+          <input type="password" name="password" placeholder="Password" class="form-input" required>
+          <button type="submit" class="login-button">LOGIN</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
