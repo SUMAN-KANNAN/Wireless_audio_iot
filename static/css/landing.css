@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 body {
     font-family: Arial, sans-serif;
     background-color: #1c1c1c;
@@ -326,3 +327,541 @@ input:checked + .slider:before {
     justify-content: center;
     align-items: center;
 }
+=======
+body {
+    font-family: Arial, sans-serif;
+    background-color: #1c1c1c;
+    color: white;
+    margin: 0;
+    height: 100vh; /* Set body height to full viewport height */
+    overflow: hidden; /* Prevent scrolling */
+}
+
+.header {
+    display: flex; /* Show header on desktop */
+    justify-content: space-between;
+    align-items: center;
+    background-color: #2a2a2a;
+    padding: 5px;
+    position: sticky;
+    top: 0;
+    z-index: 1000; /* Ensure it stays on top */
+    height: 10%; /* Adjust header height */
+}
+
+.burger-menu {
+    font-size: 30px;
+    color: white;
+    cursor: pointer;
+    margin-left: 30px; /* Adjust margin for better positioning */
+}
+
+.container-fluid {
+    display: flex;
+    padding: 20px;
+    flex-direction: row; /* Default to row layout */
+    height: calc(100% - 10%); /* Adjust height to fill remaining space below header */
+}
+
+.sidebar {
+    width: 200px; /* Fixed width for desktop */
+    background-color: #2a2a2a;
+    padding: 20px;
+    border-radius: 8px;
+    height: 82%; /* Full height of the container */
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center all child elements horizontally */
+    margin: 0; /* Remove margin to align with container */
+    position: fixed; /* Fix sidebar position */
+    top: 10%; /* Start below the header */
+    left: 0; /* Show sidebar by default */
+    transition: left 0.3s ease; /* Smooth transition */
+    z-index: 999; /* Ensure it stays on top */
+    margin-top: 40px;
+    margin-left: 33px;
+}
+
+.sidebar.open {
+    left: 0; /* Show sidebar */
+}
+
+.logo-container {
+    display: flex;
+    justify-content: left;
+    align-items: left;
+    margin-bottom: 20px;
+    width: 100%; /* Take full width of sidebar */
+}
+
+.mlogo {
+    width: 80%;
+    max-width: 180px;
+    height: auto;
+    padding-top: 10px;
+}
+
+.m2 {
+    display: none; /* Hide the image with class m2 */
+}
+
+.mlogo-header {
+    width: 80px;
+    height: 80px;
+    margin-right: 10px;
+    margin-top: 10px;
+    padding-top: 5px;
+    margin-left: 80%;
+}
+
+.logo-text {
+    display: flex;
+    flex-direction: row;
+    padding-top: 15px;
+    margin-right: 10px;
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+    font-size: medium;
+}
+
+.logo-text {
+    font-size: 24px;
+    color: white;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; 
+}
+
+.notifications {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.notifications .icon {
+    width: auto;
+    height: auto;
+    margin: 10px 0;
+    border-radius: 50%;
+    cursor: pointer;
+    padding: 10px;
+    position: relative;
+    padding-top: 40px;
+}
+
+.unmute {
+    width: 50px;
+    height: auto;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+.main-content {
+    width: calc(100% - 220px); /* Adjust width to account for sidebar */
+    padding: 20px;
+    margin-left: 220px; /* Space for the fixed sidebar */
+    height: 950%; /* Full height of the container */
+    overflow-y: auto; /* Allow scrolling within the main content if needed */
+    transition: margin-left 0.3s ease; /* Smooth transition for main content */
+}
+
+.tile {
+    background-color: #3a3a3a;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.room-name {
+    margin: 10px 0; 
+}
+
+/* Tooltip styles */
+.icon-container {
+    display: flex; /* Align icons in a row */
+    gap: 20px; /* Space between icons */
+}
+
+.icon {
+    position: relative; /* Position relative for tooltip positioning */
+}
+
+.tooltip-text {
+    visibility: hidden; /* Hidden by default */
+    width: auto; /* Auto width */
+    background-color: black; /* Background color */
+    color: white; /* Text color */
+    text-align: center; /* Center text */
+    border-radius: 5px; /* Rounded corners */
+    padding: 5px; /* Padding */
+    position: absolute; /* Positioning */
+    z-index: 1; /* Ensure it appears above other elements */
+    opacity: 0; /* Start with opacity 0 */
+    transition: opacity 0.3s; /* Smooth transition for opacity */
+    top: 50%; /* Center vertically */
+    left: 110%; /* Position to the right of the icon */
+    transform: translateY(-50%); /* Adjust for vertical centering */
+}
+
+/* Show tooltip on hover */
+.icon:hover .tooltip-text {
+    visibility: visible; /* Show the tooltip */
+    opacity: 1; /* Fade in the tooltip */
+}
+
+/* Additional styles for responsiveness */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 90%; /* Full width on mobile */
+        height: 60%; /* Flexible height */
+        min-height: 200px; /* Minimum height */
+        padding: 15px;
+        margin: 0 auto; /* Center the sidebar on mobile */
+        position: fixed; /* Fix sidebar position */
+        top: 0;
+        left: -100%; /* Hide sidebar off-screen */
+        transition: left 0.3s ease; /* Smooth transition */
+        margin-left: 20px;
+        margin-top: 95px;
+    }
+
+    .sidebar.open {
+        left: 0; /* Show sidebar */
+    }
+
+    .main-content {
+        margin-left: 0; /* No margin on mobile */
+        padding: 10px; /* Adjust padding for mobile */
+        padding-top: 5px;
+    }
+
+    .burger-menu {
+        font-size: 24px; /* Reduce burger menu size on mobile */
+        margin-left: 10px; /* Adjust margin for better positioning */
+    }
+
+    .logo-text {
+        display: flex; /* Show logo text in mobile header */
+        font-size: 18px; /* Adjust font size for mobile */
+        margin-left: 10px; /* Add margin for spacing */
+    }
+
+    .unmute {
+        width: 35px; /* Smaller mute/unmute buttons */
+    }
+}
+
+/* Additional styles for radio buttons and toggles */
+.rb {
+    position: relative;
+    margin-bottom: 12px;
+    cursor: pointer;
+    font-size: 22px;
+    user-select: none;
+    margin-top: 3%;
+}
+
+.rb input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+.checkmark {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 25px;
+    width: 25px;
+    background-color: #ff0000; /* Default red when off */
+    border-radius: 50%;
+    border: 2px solid #f9f9f9; /* Match border to background */
+}
+
+.rb input:checked ~ .checkmark {
+    background-color: #4caf50; /* Green when on */
+    border-color: #4caf50;
+}
+
+.checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+    top: 7px;
+    left: 7px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: white; /* Always white */
+}
+
+.rb input:checked ~ .checkmark:after {
+    display: block;
+}
+
+.rb:hover input ~ .checkmark {
+    opacity: 0.8;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 34px;
+    height: 20px;
+    margin: 10px 0; 
+}
+
+/* Hide default HTML checkbox */
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+/* The slider */
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 20px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 12px;
+    width: 12px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #4caf50;
+}
+
+input:focus + .slider {
+    box-shadow: 0 0 1px #4caf50;
+}
+
+input:checked + .slider:before {
+    transform: translateX(14px);
+}
+
+/* Rounded sliders */
+.slider.round {
+    border-radius: 20px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+.mic {
+    width: 50px;
+    height: auto;
+    cursor: pointer;
+    padding-top: 6%;
+}
+
+.battery-status {
+    margin-top: 15px;
+    font-size: 14px;
+}
+
+.battery-bar {
+    width: 100%;
+    height: 10px;
+    background-color: #f0f0f0;
+    border-radius: 5px;
+    margin-top: 5px;
+    overflow: hidden;
+}
+
+.battery-level {
+    height: 100%;
+    width: 0%; /* Will be set dynamically */
+    border-radius: 5px;
+    transition: width 0.5s ease, background-color 0.3s ease;
+}
+
+.survey-container {
+    margin-top: 20px;
+    background-color: #3a3a3a;
+    padding: 15px;
+    border-radius: 8px;
+    overflow-y: relative;
+}
+
+.survey-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(6, auto);
+    gap: 10px;
+}
+
+.survey-title {
+    grid-column: 1 / span 2;
+    font-size: 24px;
+    text-align: left;
+}
+
+.rooms-listening {
+    grid-column: 1 / span 2;
+    text-align: left;
+}
+
+.volume-control {
+    grid-column: 1 / span 2;
+    display: grid;
+    grid-template-columns: 160px 120px; /* Label | Slider */
+    align-items: center;
+    gap: 70px;
+    margin-top: 5px;
+}
+
+.volume-slider {
+    width: 100%;
+    margin: 10px;
+}
+
+.rmtitle {
+    white-space: nowrap;
+    text-align: right;
+    padding-right: 10px;
+}
+
+.logo-container {
+    grid-column: 3;
+    grid-row: 1 / span 6;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.profile-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #000000;
+    padding: 5px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    padding-top: 10%;
+    overflow-y: auto;
+}
+
+.profile-container {
+    margin-top: 5%;
+    margin-left: 5%;
+    width: 85%;
+    grid-column: 3;
+    grid-row: 1 / 8;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.mic-icon {
+    width: 25%;
+    height: auto;
+    margin-right: 5px;
+}
+
+.sp-name {
+    margin-top: 5%;
+    margin-left: 5%;
+    width: 85%;
+    grid-column: 3;
+    grid-row: 1 / 8;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Media Query for Mobile Devices */
+@media (max-width: 768px) {
+    .container-fluid {
+        flex-direction: column; /* Change to column layout */
+    }
+
+    .main-content {
+        width: 100%; /* Full width on mobile */
+        margin-top: 10px; /* Space for the fixed sidebar */
+    }
+
+    .logo-text {
+        display: flex; /* Show logo text in mobile header */
+        font-size: 18px; /* Adjust font size for mobile */
+        margin-left: 10px; /* Add margin for spacing */
+    }
+
+    .unmute {
+        width: 35px; /* Smaller mute/unmute buttons */
+    }
+
+    .header {
+        display: flex; /* Show header on mobile */
+        justify-content: space-between;
+        align-items: center;
+        background-color: #2a2a2a;
+        padding: 10px;
+        position: sticky;
+        top: 0;
+        z-index: 1000; /* Ensure it stays on top */
+    }
+
+    .burger-menu {
+        font-size: 24px; /* Reduce burger menu size on mobile */
+        margin-left: 10px; /* Adjust margin for better positioning */
+    }
+
+    .mlogo {
+        width: 60%; /* Smaller relative width on mobile */
+        max-width: 120px;
+        padding-top: 10px; /* Adjust padding for better alignment */
+    }
+
+    .notifications {
+        flex-direction: column; /* Horizontal layout on mobile */
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .notifications .icon {
+        padding: 5px;
+        margin: 5px;
+    }
+
+    .volume-control {
+        display: flex;
+        flex-direction: column; /* Stack vertically */
+        align-items: flex-start; /* Left-align */
+        gap: 5px; /* Reduced spacing */
+    }
+
+    .rmtitle {
+        text-align: left; /* Left-align labels */
+        width: auto; /* Natural width */
+        padding-right: 0;
+    }
+
+    .volume-slider {
+        width: 120px; /* Fixed width */
+        margin: 0; /* Remove margins */
+    }
+}
+ 
+>>>>>>> f1ee74b (first commit)

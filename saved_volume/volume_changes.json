@@ -1,0 +1,20 @@
+{
+  "conferenceRoom": {
+    "hardware_id": "HW_CONFERENCEROOM",
+    "room_id": "conferenceRoom",
+    "field": "volume",
+    "value": 100
+  },
+  "adminRoom": {
+    "hardware_id": "HW_ADMINROOM",
+    "room_id": "adminRoom",
+    "field": "volume",
+    "value": 67
+  },
+  "classRoom": {
+    "hardware_id": "HW_CLASSROOM",
+    "room_id": "classRoom",
+    "field": "volume",
+    "value": 37
+  }
+}
