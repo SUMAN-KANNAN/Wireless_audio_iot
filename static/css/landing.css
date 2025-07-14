@@ -3,54 +3,97 @@ body {
     background-color: #1c1c1c;
     color: white;
     margin: 0;
+    height: 100vh; /* Set body height to full viewport height */
+    overflow: hidden; /* Prevent scrolling */
+}
+
+.header {
+    display: flex; /* Show header on desktop */
+    justify-content: space-between;
+    align-items: center;
+    background-color: #2a2a2a;
+    padding: 5px;
+    position: sticky;
+    top: 0;
+    z-index: 1000; /* Ensure it stays on top */
+    height: 10%; /* Adjust header height */
+}
+
+.burger-menu {
+    font-size: 30px;
+    color: white;
+    cursor: pointer;
+    margin-left: 10px; /* Adjust margin for better positioning */
+    padding-left: 20px;
 }
 
 .container-fluid {
     display: flex;
     padding: 20px;
-    /* overflow-y: visible; */
+    flex-direction: row; /* Default to row layout */
+    height: calc(100% - 10%); /* Adjust height to fill remaining space below header */
 }
 
 .sidebar {
-    /* width: 12%; */
-    width: 20%;
+    width: 200px; /* Fixed width for desktop */
     background-color: #2a2a2a;
     padding: 20px;
     border-radius: 8px;
-    /* overflow-y: auto; */
-    position:center;
-    /* height: 675px; */
-    height: 675px;
+    height: 82%; /* Full height of the container */
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center all child elements horizontally */
+    margin: 0; /* Remove margin to align with container */
+    position: fixed; /* Fix sidebar position */
+    top: 10%; /* Start below the header */
+    left: -200px; /* Hide sidebar off-screen */
+    transition: left 0.3s ease; /* Smooth transition */
+    z-index: 999; /* Ensure it stays on top */
+    margin-top: 40px;
+    margin-left: 33px;
+}
+
+.sidebar.open {
+    left: 0; /* Show sidebar */
 }
 
 .logo-container {
     display: flex;
-    justify-content: center;
-    align-items: center;
+    justify-content: left;
+    align-items: left;
     margin-bottom: 20px;
-    width: fit-content;
-    height:fit-content;
+    width: 100%; /* Take full width of sidebar */
 }
-.mlogo {
-    width: 150%; /* Adjust logo size as needed */
-    height: auto;
-    position: center;
-    align-items: center;
-    justify-content: center;
-    /* padding: auto; */
 
+.mlogo {
+    width: 80%;
+    max-width: 180px;
+    height: auto;
+    padding-top: 10px;
+}
+
+.mlogo-header{
+    width: 80px; 
+    height: 80px;
+    align-items: center;
+    justify-content:center;
+    justify-items: center;
+    margin-left: 80%;
+    margin-top: 3px;
+    padding-top: 10px;
+}
+
+.logo-text{
+    padding-top: 13px;
 }
 
 .notifications {
     margin-top: 20px;
     display: flex;
     flex-direction: column;
-    /* padding: auto; */
-    position: static;
-    /* padding-left: 25%; */
     align-items: center;
-    
+    padding-top: 40px;
 }
 
 .notifications .icon {
@@ -59,24 +102,24 @@ body {
     margin: 10px 0;
     border-radius: 50%;
     cursor: pointer;
-    padding: 10px;
-    /* align-items: center;
-    justify-content:center; */
-    padding-left: 20% ;
-    padding-top: 20% ;
+    padding: 25px;
     position: relative;
-    /* position: static; */
-    
 }
+
 .unmute {
     width: 50px;
     height: auto;
     cursor: pointer;
+    margin-left: 15px;
 }
 
 .main-content {
-    width: 100%;
+    width: calc(100% - 220px); /* Adjust width to account for sidebar */
     padding: 20px;
+    margin-left: 220px; /* Space for the fixed sidebar */
+    height: 950%; /* Full height of the container */
+    overflow-y: auto; /* Allow scrolling within the main content if needed */
+    transition: margin-left 0.3s ease; /* Smooth transition for main content */
 }
 
 .tile {
@@ -91,69 +134,99 @@ body {
     margin: 10px 0; 
 }
 
+/* Additional styles for responsiveness */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 90%; /* Full width on mobile */
+        height: 60%; /* Flexible height */
+        min-height: 200px; /* Minimum height */
+        padding: 15px;
+        margin: 0 auto; /* Center the sidebar on mobile */
+        position: fixed; /* Fix sidebar position */
+        top: 0;
+        left: -100%; /* Hide sidebar off-screen */
+        transition: left 0.3s ease; /* Smooth transition */
+        margin-left: 20px;
+        margin-top: 95px;
+    }
+
+    .sidebar.open {
+        left: 0; /* Show sidebar */
+    }
+
+    .main-content {
+        margin-left: 0; /* No margin on mobile */
+        padding: 10px; /* Adjust padding for mobile */
+        padding-top: 5px;
+    }
+    .mlogo-header{
+        width: 80px; 
+        height: 80px;
+        align-items: center;
+        justify-content:center;
+        justify-items: center;
+        margin-left: 80%;
+        margin-top: 3px;
+        padding-top: 10px;
+    }
+
+    .logo-text{
+        padding-top: 13px;
+    }
+}
+
+/* Additional styles for radio buttons and toggles */
 .rb {
     position: relative;
-    padding-left: 7%;
-    padding-right: 5%;
     margin-bottom: 12px;
     cursor: pointer;
     font-size: 22px;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
     user-select: none;
     margin-top: 3%;
 }
 
 .rb input {
-  position: absolute;
-  opacity: 0;
-  cursor: pointer;
-  height: 0;
-  width: 0;
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
 }
 
-/* Create a custom radio button */
 .checkmark {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 25px;
-  width: 25px;
-  background-color: #eee;
-  border-radius: 50%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 25px;
+    width: 25px;
+    background-color: #ff0000; /* Default red when off */
+    border-radius: 50%;
+    border: 2px solid #f9f9f9; /* Match border to background */
 }
 
-/* On mouse-over, add a grey background color */
-.rb:hover input ~ .checkmark {
-  background-color: #ccc;
-}
-
-/* When the radio button is checked, add a blue background */
 .rb input:checked ~ .checkmark {
-  background-color: #ffffff;
+    background-color: #4caf50; /* Green when on */
+    border-color: #4caf50;
 }
 
-/* Create the indicator (the dot/circle - hidden when not checked) */
 .checkmark:after {
-  content: "";
-  position: absolute;
-  display: none;
+    content: "";
+    position: absolute;
+    display: none;
+    top: 7px;
+    left: 7px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: white; /* Always white */
 }
 
-/* Show the indicator (dot/circle) when checked */
 .rb input:checked ~ .checkmark:after {
-  display: block;
+    display: block;
 }
 
-/* Style the indicator (dot/circle) */
-.rb .checkmark:after {
-  top: 9px;
-  left: 9px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #4caf50;
+.rb:hover input ~ .checkmark {
+    opacity: 0.8;
 }
 
 .toggle-switch {
@@ -161,10 +234,7 @@ body {
     display: inline-block;
     width: 34px;
     height: 20px;
-    align-items: center;
     margin: 10px 0; 
-    /* padding-left: 10%;
-    grid:2/1/span 3; */
 }
 
 /* Hide default HTML checkbox */
@@ -228,20 +298,24 @@ input:checked + .slider:before {
 }
 
 .battery-status {
-    margin-top: 10px;
+    margin-top: 15px;
+    font-size: 14px;
 }
 
 .battery-bar {
     width: 100%;
     height: 10px;
-    background-color: #ccc;
+    background-color: #f0f0f0;
     border-radius: 5px;
+    margin-top: 5px;
+    overflow: hidden;
 }
 
 .battery-level {
     height: 100%;
-    background-color: #4caf50;
+    width: 0%; /* Will be set dynamically */
     border-radius: 5px;
+    transition: width 0.5s ease, background-color 0.3s ease;
 }
 
 .survey-container {
@@ -272,13 +346,22 @@ input:checked + .slider:before {
 
 .volume-control {
     grid-column: 1 / span 2;
-    margin-top: 10px;
-    padding-top: 3%;
+    display: grid;
+    grid-template-columns: 160px 120px; /* Label | Slider */
+    align-items: center;
+    gap: 70px;
+    margin-top: 5px;
 }
 
 .volume-slider {
-    width: 120px; /* Set the width of the volume slider to 120px */
-    margin-left: 10%;
+    width: 100%;
+    margin: 10px;
+}
+
+.rmtitle {
+    white-space: nowrap;
+    text-align: right;
+    padding-right: 10px;
 }
 
 .logo-container {
@@ -286,9 +369,8 @@ input:checked + .slider:before {
     grid-row: 1 / span 6;
     display: flex;
     justify-content: center;
-    align-items: flex-start;
+    align-items: center;
 }
-
 
 .profile-container {
     display: flex;
@@ -301,6 +383,7 @@ input:checked + .slider:before {
     padding-top: 10%;
     overflow-y: auto;
 }
+
 .profile-container {
     margin-top: 5%;
     margin-left: 5%;
@@ -311,12 +394,14 @@ input:checked + .slider:before {
     justify-content: center;
     align-items: center;
 }
+
 .mic-icon {
     width: 25%;
     height: auto;
     margin-right: 5px;
 }
-.sp-name{
+
+.sp-name {
     margin-top: 5%;
     margin-left: 5%;
     width: 85%;
@@ -325,4 +410,93 @@ input:checked + .slider:before {
     display: flex;
     justify-content: center;
     align-items: center;
+}
+
+/* Media Query for Mobile Devices */
+@media (max-width: 768px) {
+    .container-fluid {
+        flex-direction: column; /* Change to column layout */
+    }
+
+    .main-content {
+        width: 100%; /* Full width on mobile */
+        margin-top: 10px; /* Space for the fixed sidebar */
+    }
+
+    .unmute {
+        width: 35px; /* Smaller mute/unmute buttons */
+    }
+
+    .header {
+        display: flex; /* Show header on mobile */
+        justify-content: space-between;
+        align-items: center;
+        background-color: #2a2a2a;
+        padding: 10px;
+        position: sticky;
+        top: 0;
+        z-index: 1000; /* Ensure it stays on top */
+
+    }
+
+    .burger-menu {
+        font-size: 30px;
+        color: white;
+        cursor: pointer;
+        margin-top: 10px; /* Adjust margin to position lower */
+        
+    }
+
+    .mlogo {
+        width: 60%; /* Smaller relative width on mobile */
+        max-width: 120px;
+        padding-top: 100px;
+    }
+
+    .notifications {
+        flex-direction: column; /* Horizontal layout on mobile */
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .notifications .icon {
+        padding: 5px;
+        margin: 5px;
+    }
+
+    .volume-control {
+        display: flex;
+        flex-direction: column; /* Stack vertically */
+        align-items: flex-start; /* Left-align */
+        gap: 5px; /* Reduced spacing */
+    }
+
+    .rmtitle {
+        text-align: left; /* Left-align labels */
+        width: auto; /* Natural width */
+        padding-right: 0;
+    }
+
+    .volume-slider {
+        width: 120px; /* Fixed width */
+        margin: 0; /* Remove margins */
+    }
+    .mlogo-header{
+        width: 80px; 
+        height: 80px;
+        align-items: center;
+        justify-content:center;
+        justify-items: center;
+        margin-left: 80%;
+        margin-top: 3px;
+        padding-top: 10px;
+    }
+
+    .logo-text{
+        padding-top: 13px;
+    }
+    .logo-container{
+        margin-right: 20%;
+    }
 }
