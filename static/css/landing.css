@@ -144,8 +144,8 @@ body {
         margin: 0 auto; /* Center the sidebar on mobile */
         position: fixed; /* Fix sidebar position */
         top: 0;
-        left: -100%; /* Hide sidebar off-screen */
-        transition: left 0.3s ease; /* Smooth transition */
+        left: -100%;/*  Hide sidebar off-screen */
+        transition: left 0.3s ease; /*  Smooth transition */
         margin-left: 20px;
         margin-top: 95px;
     }
@@ -172,6 +172,26 @@ body {
 
     .logo-text{
         padding-top: 13px;
+    }
+
+    .rb{
+        position: relative;
+        margin-right: -10%;
+        /* align-items: right; */
+        padding-top: 10%;
+        
+    }
+
+    #rbadmin{
+        margin-right: -28%;
+    }
+
+    #rbclass{
+        margin-right: -28%;
+    }
+
+    .sp-name{
+        padding-left: 10%;
     }
 }
 
@@ -227,6 +247,14 @@ body {
 
 .rb:hover input ~ .checkmark {
     opacity: 0.8;
+}
+
+#rbadmin{
+    margin-right: -28%;
+}
+
+#rbclass{
+    margin-right: -28%;
 }
 
 .toggle-switch {
