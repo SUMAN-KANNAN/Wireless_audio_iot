@@ -145,7 +145,7 @@ body {
         position: fixed; /* Fix sidebar position */
         top: 0;
         left: -100%;/*  Hide sidebar off-screen */
-        transition: right 0.3s ease; /*  Smooth transition */
+        transition: left 0.3s ease; /*  Smooth transition */
         margin-left: 20px;
         margin-top: 95px;
     }
