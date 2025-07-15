@@ -1,0 +1,10 @@
+{
+  "status": {
+    "room": "adminRoom",
+    "status": "Active"
+  },
+  "battery": {
+    "room": "adminRoom",
+    "percentage": 32
+  }
+}
