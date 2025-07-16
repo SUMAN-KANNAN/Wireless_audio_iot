@@ -290,7 +290,7 @@ function muteAll() {
 
 function unmuteAll() {
     const switches = document.querySelectorAll('.mic-toggle');
-    deactivateMicrophone();
+    deactivateMicrophone(); // This should be called after activating the microphones
     switches.forEach(switchElement => {
         switchElement.checked = true;
         const switchId = switchElement.id;
@@ -303,6 +303,7 @@ function unmuteAll() {
             const statusMessage = { room: roomId, status: "Active" };
             statusSocket.send(JSON.stringify(statusMessage));
         }
+        toggleMic(roomId); 
     });
     updateListeningCount();
 }
