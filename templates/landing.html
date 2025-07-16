@@ -91,7 +91,8 @@
                                 <input type="checkbox" id="switchAdmin"  >
                                 <span class="slider round"></span>
                             </label> -->
-                            <label class="rb">
+                            <!-- rb -->
+                            <label class="rb" id="rbadmin">
                               <input type="checkbox"  id="roomCheckbox" class="status-checkbox">
                               <span class="checkmark"></span>
                             </label><br>
@@ -127,7 +128,8 @@
                                 <input type="checkbox"  class="mic-toggle" onchange="updateListeningCount()">
                                 <span class="slider round"></span>
                             </label> -->
-                            <label class="rb">
+                            <!-- rb -->
+                            <label class="rb" id="rbclass">
                               <input type="checkbox" id="roomCheckbox" class="status-checkbox">
                               <span class="checkmark"></span>
                             </label><br>
@@ -189,5 +191,13 @@
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        function toggleSidebar(){
+            const sidebar = document.querySelector('.sidebar');
+            const mainContent = document.querySelector('.main-content');
+            sidebar.classList.toggle('open');
+            mainContent.classList.toggle('shift');
+        }
+    </script>
 </body>
 </html>
