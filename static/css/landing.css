@@ -39,7 +39,7 @@ body {
     background-color: #2a2a2a;
     padding: 20px;
     border-radius: 8px;
-    height: calc(100% - 17.9%); /* Full height of the container */
+    height: calc(100% - 17.8%); /* Full height of the container */
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
@@ -181,7 +181,7 @@ body {
 
     /* rb adjusted */
     #rbadmin {
-        margin-right: -28%;
+        margin-right: 10%; 
     }
 
     #rbclass {
@@ -336,6 +336,7 @@ input:checked + .slider:before {
     grid-column: 1 / span 2;
     font-size: 24px;
     text-align: left;
+    margin-top: -1px;
 }
 
 .rooms-listening {
@@ -349,13 +350,16 @@ input:checked + .slider:before {
     grid-template-columns: 160px 120px; /* Label | Slider */
     align-items: center;
     gap: 70px;
-    margin-top: 5px;
+    margin-top: 4px;
+    font-weight: bold;
+    padding-bottom: 18px;
 }
-.master-volume-control {
+/* .master-volume-control { */
     /* Add a visual separator below the master volume */
-    border-bottom: 1px solid #555;
-    padding-bottom: 10px;
-}
+    /* border-bottom: 1px solid #555; */
+    /* padding-bottom: 10px; */
+    /* margin-top: -0.5%;*/
+/* } */
 
 .master-volume-control .rmtitle {
     /* Make the master volume label bold using CSS for proper alignment */
@@ -365,12 +369,13 @@ input:checked + .slider:before {
 .volume-slider {
     width: 100%;
     margin: 10px 0; /* Use vertical margin to prevent horizontal overflow */
+    /* padding-left: 25px; */
 }
 
 .rmtitle {
     white-space: nowrap;
     text-align: right;
-    padding-right: 10px;
+    padding-right: 40px;
 }
 
 .logo-container {
@@ -399,7 +404,7 @@ input:checked + .slider:before {
 .mic-icon {
     width: 25%;
     height: auto;
-    /* margin-right: 5px; */ /* Removed for better centering */
+    /* margin-right: 5px; / / Removed for better centering */
 }
 
 .sp-name {
@@ -473,8 +478,8 @@ input:checked + .slider:before {
     }
 
     .volume-slider {
-        width: 120px; /* Fixed width */
-        margin: 0; /* Remove margins */
+        width: 120px; 
+        margin: 0; 
     }
 
     .mlogo-header {
