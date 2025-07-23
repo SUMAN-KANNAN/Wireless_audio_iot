@@ -1,5 +1,6 @@
 import asyncio
 import websockets
+import os
 import json
 import random
 import sys
@@ -8,61 +9,66 @@ WEBSOCKET_SERVER_ADDRESS = "localhost"
 WEBSOCKET_SERVER_PORT = 5000
 THIS_ROOM_ID = None
 
-CURRENT_STATUS = "Active"  # Track current status
-AUDIO_ON = False           # Track audio button state
+# Load the device API key from an environment variable to match the server.
+# This key must match the DEVICE_API_KEY in app.py
+DEVICE_API_KEY = os.environ.get('DEVICE_API_KEY', 'a-very-secret-key-for-devices-only')
+
+AUDIO_ON = False  # Global state to track if the mic is on or off
+CURRENT_BATTERY = 100 # Global state for battery level
+
+async def keyboard_listener():
+    """Listens for keyboard input in a separate thread to toggle the audio state."""
+    global AUDIO_ON
+    loop = asyncio.get_running_loop()
+    print(f"--- Controls for {THIS_ROOM_ID}: Press 'm' then 'Enter' to toggle microphone ON/OFF ---")
+    while True:
+        # Run the blocking input() in a separate thread to avoid freezing the event loop
+        key = await loop.run_in_executor(None, sys.stdin.readline)
+        if 'm' in key:
+            AUDIO_ON = not AUDIO_ON
+            print(f"\n--- Toggled Mic for {THIS_ROOM_ID}. Audio is now {'ON' if AUDIO_ON else 'OFF'} ---\n")
 
 async def send_status(websocket):
-    global CURRENT_STATUS
+    """Sends the device status (Active/Sleep) to the server when it changes."""
+    global CURRENT_BATTERY # Need to access the global battery state
+    last_sent_status = ""
     while True:
-        # If audio is on, force status to Active and keep it Active
-        if AUDIO_ON:
-            if CURRENT_STATUS != "Active":
-                CURRENT_STATUS = "Active"
-                message = {"room": THIS_ROOM_ID, "status": "Active"}
-                try:
-                    await websocket.send(json.dumps(message))
-                    print(f"Sent status for {THIS_ROOM_ID}: Active (forced by audio ON)")
-                except websockets.exceptions.ConnectionClosedError:
-                    print(f"Status WebSocket for {THIS_ROOM_ID} is closed. Exiting send_status.")
-                    break
-                except Exception as e:
-                    print(f"Error sending status for {THIS_ROOM_ID}: {e}")
-                    break
-            # While audio is ON, do not toggle status, just keep it Active
-        else:
-            # Randomly pick status only when audio is OFF
-            status = random.choice(["Active", "Sleep"])
-            CURRENT_STATUS = status
+        # A device can only be "Active" if the mic is toggled ON AND it has battery > 0
+        status = "Active" if AUDIO_ON and CURRENT_BATTERY > 0 else "Sleep"
+        if status != last_sent_status:
             message = {"room": THIS_ROOM_ID, "status": status}
             try:
                 await websocket.send(json.dumps(message))
                 print(f"Sent status for {THIS_ROOM_ID}: {status}")
+                last_sent_status = status
             except websockets.exceptions.ConnectionClosedError:
                 print(f"Status WebSocket for {THIS_ROOM_ID} is closed. Exiting send_status.")
                 break
             except Exception as e:
                 print(f"Error sending status for {THIS_ROOM_ID}: {e}")
                 break
-        await asyncio.sleep(random.uniform(5, 15))
+        await asyncio.sleep(1) # Check for status changes every second
 
 async def send_battery(websocket):
     while True:
-        if CURRENT_STATUS == "Active":
-            battery_percentage = random.randint(20, 100)
-            message = {"room": THIS_ROOM_ID, "percentage": battery_percentage}
-            try:
-                await websocket.send(json.dumps(message))
-                print(f"Sent battery for {THIS_ROOM_ID}: {battery_percentage}%")
-            except websockets.exceptions.ConnectionClosedError:
-                print(f"Battery WebSocket for {THIS_ROOM_ID} is closed. Exiting send_battery.")
-                break
-            except Exception as e:
-                print(f"Error sending battery for {THIS_ROOM_ID}: {e}")
-                break
-        await asyncio.sleep(random.uniform(30, 90))
+        global CURRENT_BATTERY # Need to modify the global battery state
+        # Simulate a more realistic battery range for better UI testing
+        battery_percentage = random.randint(0, 100)
+        CURRENT_BATTERY = battery_percentage # Update the global state
+        message = {"room": THIS_ROOM_ID, "percentage": battery_percentage}
+        try:
+            await websocket.send(json.dumps(message))
+            print(f"Sent battery for {THIS_ROOM_ID}: {battery_percentage}%")
+        except websockets.exceptions.ConnectionClosedError:
+            print(f"Battery WebSocket for {THIS_ROOM_ID} is closed. Exiting send_battery.")
+            break
+        except Exception as e:
+            print(f"Error sending battery for {THIS_ROOM_ID}: {e}")
+            break
+        await asyncio.sleep(random.uniform(20, 40)) # Send battery status periodically
 
 async def receive_commands(websocket):
-    global AUDIO_ON
+    """Listens for and prints commands from the server (like volume changes)."""
     while True:
         try:
             message = await websocket.recv()
@@ -72,14 +78,9 @@ async def receive_commands(websocket):
                 if command.get("type") == "volume_set":
                     volume = command.get("volume")
                     if volume is not None:
-                        print(f"Setting volume for {THIS_ROOM_ID} to {volume}")
-                # Simulate audio button toggle via command
-                if command.get("type") == "audio_on":
-                    AUDIO_ON = True
-                    print(f"Audio ON for {THIS_ROOM_ID}")
-                elif command.get("type") == "audio_off":
-                    AUDIO_ON = False
-                    print(f"Audio OFF for {THIS_ROOM_ID}")
+                        print(f"-> Simulated setting volume for {THIS_ROOM_ID} to {volume}")
+                else:
+                    print(f"-> Received other command: {command}")
             except json.JSONDecodeError:
                 print(f"Received non-JSON message on command channel: {message}")
 
@@ -92,10 +93,11 @@ async def receive_commands(websocket):
 
 async def send_simulated_audio_message(websocket):
     while True:
-        if CURRENT_STATUS == "Active" and AUDIO_ON:
-            simulated_audio_data = {"type": "audio_status", "message": "Simulating audio stream"}
+        if AUDIO_ON:
+            # In a real scenario, this would send binary audio data.
+            simulated_audio_data = b'\x01\x02\x03\x04\x05'
             try:
-                await websocket.send(json.dumps(simulated_audio_data))
+                await websocket.send(simulated_audio_data)
             except websockets.exceptions.ConnectionClosedError:
                 print(f"Audio WebSocket for {THIS_ROOM_ID} is closed. Exiting simulated audio send.")
                 break
@@ -105,18 +107,19 @@ async def send_simulated_audio_message(websocket):
         await asyncio.sleep(5)
 
 async def connect_and_simulate():
+    auth_url_part = f"?token={DEVICE_API_KEY}"
     while True:
         try:
             async with websockets.connect(
-                f"ws://{WEBSOCKET_SERVER_ADDRESS}:{WEBSOCKET_SERVER_PORT}/ws/audio",
+                f"ws://{WEBSOCKET_SERVER_ADDRESS}:{WEBSOCKET_SERVER_PORT}/ws/audio{auth_url_part}",
                 ping_interval=10, ping_timeout=10
             ) as audio_websocket, \
             websockets.connect(
-                f"ws://{WEBSOCKET_SERVER_ADDRESS}:{WEBSOCKET_SERVER_PORT}/ws/status",
+                f"ws://{WEBSOCKET_SERVER_ADDRESS}:{WEBSOCKET_SERVER_PORT}/ws/status{auth_url_part}",
                 ping_interval=10, ping_timeout=10
             ) as status_websocket, \
             websockets.connect(
-                f"ws://{WEBSOCKET_SERVER_ADDRESS}:{WEBSOCKET_SERVER_PORT}/ws/battery",
+                f"ws://{WEBSOCKET_SERVER_ADDRESS}:{WEBSOCKET_SERVER_PORT}/ws/battery{auth_url_part}",
                 ping_interval=10, ping_timeout=10
             ) as battery_websocket:
 
@@ -127,6 +130,7 @@ async def connect_and_simulate():
                 print(f"Sent room identification for {THIS_ROOM_ID} on audio channel.")
 
                 tasks = [
+                    asyncio.create_task(keyboard_listener()),
                     asyncio.create_task(send_simulated_audio_message(audio_websocket)),
                     asyncio.create_task(send_status(status_websocket)),
                     asyncio.create_task(send_battery(battery_websocket)),

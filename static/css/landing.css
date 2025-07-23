@@ -40,7 +40,10 @@ body {
     background-color: #2a2a2a;
     padding: 20px;
     border-radius: 8px;
-    height: 82%; /* Full height of the container */
+
+    height: calc(100% - 17.8%); /* Full height of the container */
+
+
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
@@ -48,15 +51,16 @@ body {
     margin: 0; /* Remove margin to align with container */
     position: fixed; /* Fix sidebar position */
     top: 10%; /* Start below the header */
-    left: -200px; /* Hide sidebar off-screen */
-    transition: left 0.3s ease; /* Smooth transition */
+
+    left: 0; /* Keep sidebar visible */
     z-index: 999; /* Ensure it stays on top */
-    margin-top: 40px;
-    margin-left: 33px;
+    margin-left: 25px;
+    margin-top: 27px;
+    
+
+    
 }
 
-.sidebar.open {
-    left: 0; /* Show sidebar */
 }
 
 .logo-container {
@@ -65,6 +69,7 @@ body {
     align-items: left;
     margin-bottom: 20px;
     width: 100%; /* Take full width of sidebar */
+    margin-top: 3px;
 }
 
 .mlogo {
@@ -74,18 +79,23 @@ body {
     padding-top: 10px;
 }
 
-.mlogo-header{
+
+.mlogo-header {
     width: 80px; 
     height: 80px;
     align-items: center;
-    justify-content:center;
+    justify-content: center;
+
+
     justify-items: center;
     margin-left: 80%;
     margin-top: 3px;
     padding-top: 10px;
 }
 
-.logo-text{
+
+.logo-text {
+
     padding-top: 13px;
 }
 
@@ -118,9 +128,13 @@ body {
     width: calc(100% - 220px); /* Adjust width to account for sidebar */
     padding: 20px;
     margin-left: 220px; /* Space for the fixed sidebar */
-    height: 950%; /* Full height of the container */
+
+    height: calc(100vh - 60px); /* Full height of the container */
     overflow-y: auto; /* Allow scrolling within the main content if needed */
     transition: margin-left 0.3s ease; /* Smooth transition for main content */
+    margin-top: -10px;
+
+
 }
 
 .tile {
@@ -139,17 +153,18 @@ body {
 @media (max-width: 768px) {
     .sidebar {
         width: 90%; /* Full width on mobile */
-        height: 60%; /* Flexible height */
+
+        height: 52%; /* Flexible height */
         min-height: 200px; /* Minimum height */
         padding: 15px;
-        margin: 0 auto; /* Center the sidebar on mobile */
+        /* margin: 0 auto; Center the sidebar on mobile */
         position: fixed; /* Fix sidebar position */
         top: 0;
-        left: -100%;/*  Hide sidebar off-screen */
-        transition: left 0.3s ease; /*  Smooth transition */
-        margin-left: 20px;
-        margin-top: 95px;
+        left: -100%; /* Hide sidebar off-screen */
+        transition: left 0.3s ease; /* Smooth transition */
+        margin-top: 98px;
     }
+
 
     .sidebar.open {
         left: 0; /* Show sidebar */
@@ -160,95 +175,79 @@ body {
         padding: 10px; /* Adjust padding for mobile */
         padding-top: 5px;
     }
-    .mlogo-header{
+
+    .mlogo-header {
         width: 80px; 
         height: 80px;
         align-items: center;
-        justify-content:center;
+        justify-content: center;
         justify-items: center;
         margin-left: 80%;
         margin-top: 3px;
         padding-top: 10px;
     }
 
-    .logo-text{
+    .logo-text {
         padding-top: 13px;
     }
 
-    .rb{
+    .rb {
         position: relative;
         margin-right: -10%;
-        /* align-items: right; */
-        padding-top: 10%;
-        
+        /* padding-top: 10%; */
     }
 
     /* rb adjusted */
-    #rbadmin{
+    #rbadmin {
+        margin-right: 10%; 
+    }
+
+    #rbclass {
         margin-right: -28%;
     }
 
-    #rbclass{
-        margin-right: -28%;
-    }
-
-    .sp-name{
+    .sp-name {
         padding-left: 10%;
     }
 }
+
 
 /* Additional styles for radio buttons and toggles */
 .rb {
     position: relative;
     margin-bottom: 12px;
-    cursor: pointer;
     font-size: 22px;
     user-select: none;
     margin-top: 3%;
 }
-
-.rb input {
-    position: absolute;
-    opacity: 0;
-    cursor: pointer;
-    height: 0;
-    width: 0;
-}
-
 .checkmark {
-    position: absolute;
-    top: 0;
-    left: 0;
+
     height: 25px;
     width: 25px;
     background-color: #ff0000; /* Default red when off */
     border-radius: 50%;
     border: 2px solid #f9f9f9; /* Match border to background */
-}
 
-.rb input:checked ~ .checkmark {
+    display: inline-block; /* Ensure it behaves like a block element */
+
+
+}
+/* Optional: Add a class to change color when active */
+.checkmark.active {
     background-color: #4caf50; /* Green when on */
     border-color: #4caf50;
 }
-
-.checkmark:after {
-    content: "";
-    position: absolute;
-    display: none;
-    top: 7px;
-    left: 7px;
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    background: white; /* Always white */
-}
-
-.rb input:checked ~ .checkmark:after {
-    display: block;
-}
-
-.rb:hover input ~ .checkmark {
+/* Optional: Add hover effect */
+.rb:hover .checkmark {
     opacity: 0.8;
+}
+/* rb adjusted */
+#rbadmin {
+    margin-right: -28%;
+}
+
+#rbclass {
+    margin-right: -28%;
 }
 
 /* rb adjusted */
@@ -356,6 +355,7 @@ input:checked + .slider:before {
     padding: 15px;
     border-radius: 8px;
     overflow-y: relative;
+    margin-top: -0.2px;
 }
 
 .survey-grid {
@@ -369,6 +369,7 @@ input:checked + .slider:before {
     grid-column: 1 / span 2;
     font-size: 24px;
     text-align: left;
+    margin-top: -1px;
 }
 
 .rooms-listening {
@@ -382,18 +383,34 @@ input:checked + .slider:before {
     grid-template-columns: 160px 120px; /* Label | Slider */
     align-items: center;
     gap: 70px;
-    margin-top: 5px;
+    margin-top: 4px;
+    font-weight: bold;
+    padding-bottom: 18px;
 }
+
+/* .master-volume-control { */
+    /* Add a visual separator below the master volume */
+    /* border-bottom: 1px solid #555; */
+    /* padding-bottom: 10px; */
+    /* margin-top: -0.5%;*/
+/* } */
+
+.master-volume-control .rmtitle {
+    /* Make the master volume label bold using CSS for proper alignment */
+    font-weight: bold;
+}
+
 
 .volume-slider {
     width: 100%;
-    margin: 10px;
+    margin: 10px 0; /* Use vertical margin to prevent horizontal overflow */
+    /* padding-left: 25px; */
 }
 
 .rmtitle {
     white-space: nowrap;
     text-align: right;
-    padding-right: 10px;
+    padding-right: 40px;
 }
 
 .logo-container {
@@ -405,43 +422,30 @@ input:checked + .slider:before {
 }
 
 .profile-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background-color: #000000;
-    padding: 5px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    padding-top: 10%;
-    overflow-y: auto;
-}
-
-.profile-container {
     margin-top: 5%;
     margin-left: 5%;
     width: 85%;
     grid-column: 3;
     grid-row: 1 / 8;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
+    background-color: #000000;
+    padding: 15px 5px;
+    border-radius: 8px;
 }
 
 .mic-icon {
     width: 25%;
     height: auto;
-    margin-right: 5px;
+    /* margin-right: 5px; / / Removed for better centering */
 }
 
 .sp-name {
-    margin-top: 5%;
-    margin-left: 5%;
-    width: 85%;
-    grid-column: 3;
-    grid-row: 1 / 8;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    margin-top: 10px;
+    text-align: center;
+    line-height: 1.2;
 }
 
 /* Media Query for Mobile Devices */
@@ -458,6 +462,7 @@ input:checked + .slider:before {
     .unmute {
         width: 35px; /* Smaller mute/unmute buttons */
     }
+
 
     .header {
         display: flex; /* Show header on mobile */
@@ -476,7 +481,7 @@ input:checked + .slider:before {
         color: white;
         cursor: pointer;
         margin-top: 10px; /* Adjust margin to position lower */
-        
+
     }
 
     .mlogo {
@@ -511,24 +516,27 @@ input:checked + .slider:before {
     }
 
     .volume-slider {
-        width: 120px; /* Fixed width */
-        margin: 0; /* Remove margins */
+        width: 120px; 
+        margin: 0; 
     }
-    .mlogo-header{
+
+    .mlogo-header {
         width: 80px; 
         height: 80px;
         align-items: center;
-        justify-content:center;
+        justify-content: center;
         justify-items: center;
         margin-left: 80%;
         margin-top: 3px;
         padding-top: 10px;
     }
 
-    .logo-text{
+    .logo-text {
         padding-top: 13px;
     }
-    .logo-container{
+
+
+    .logo-container {
         margin-right: 20%;
     }
 }

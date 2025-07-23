@@ -1,0 +1,6 @@
+# Python virtual environment
+venv/
+__pycache__/
+
+# ESP32 secrets file
+secrets.h

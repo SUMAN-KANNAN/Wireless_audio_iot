@@ -8,9 +8,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Inria+Sans&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-    <script src="{{ url_for('static', filename='js/battery.js') }}"></script>
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/mlogo.png') }}"  sizes="16x16">
+    <script>
+        const authToken = {{ auth_token|tojson }};
+    </script>
 </head>
 <body>
     <div class="header">
@@ -49,31 +50,24 @@
         <div class="main-content">
             <div class="row">
                 <!-- Room Tiles -->
+
+                {% for room in rooms %}
+
                 <div class="col-md-4">
-                    <div class="tile" id="conferenceRoom">
+                    <div class="tile" id="{{ room.id }}">
                         <div class="d-flex justify-content-between">
-                            <h3 class="room-name">Conference Room</h3>
-                            <!-- <label class="toggle-switch">
-                                <input type="checkbox" id="switchConference" class="mic-toggle" onchange="updateListeningCount()">
-                                <span class="slider round"></span>
-                            </label> -->
+
+                            <h3 class="room-name">{{ room.name }}</h3>
                             <label class="rb">
-                              <input type="checkbox" id="roomCheckbox" class="status-checkbox">
                               <span class="checkmark"></span>
                             </label><br>
-                            <script src="client.js"></script>
                         </div>
-                        <img src="{{ url_for('static', filename='images/muteunmute.png') }}" alt="Mic" id="mic-conference" class="mic" onclick="toggleMic('conferenceRoom')"><br>
+                        <img src="{{ url_for('static', filename='images/muteunmute.png') }}" class="mic" data-room="{{ room.id }}" alt="Mic for {{ room.name }}"><br>
                         <label class="toggle-switch">
-                            <input type="checkbox"id="switchConference" class="mic-toggle" onchange="updateListeningCount()">
+                            <input type="checkbox" id="{{ room.switch_id }}" class="mic-toggle">
                             <span class="slider round" ></span>
-                          </label>  
-                        <!-- <div class="battery-status">
-                            <p>Battery: <span class="battery-percentage">70%</span></p>
-                            <div class="battery-bar">
-                                <div class="battery-level" style="width: 70%;"></div>
-                            </div>
-                        </div> -->
+                        </label>
+                            
                         <div class="battery-status">
                             <p>Battery: <span class="battery-percentage">--%</span></p>
                             <div class="battery-bar">
@@ -82,79 +76,7 @@
                         </div>
                     </div>
                 </div>
-
-                <div class="col-md-4">
-                    <div class="tile" id="adminRoom">
-                        <div class="d-flex justify-content-between">
-                            <h3 class="room-name">Admin Room</h3>
-                            <!-- <label class="toggle-switch">
-                                <input type="checkbox" id="switchAdmin"  >
-                                <span class="slider round"></span>
-                            </label> -->
-                            <!-- rb -->
-                            <label class="rb" id="rbadmin">
-                              <input type="checkbox"  id="roomCheckbox" class="status-checkbox">
-                              <span class="checkmark"></span>
-                            </label><br>
-                            <script src="client.js"></script>                             
-                        </div>
-                        <img src="{{ url_for('static', filename='images/muteunmute.png') }}" alt="Mic" id="mic-admin" class="mic" onclick="toggleMic('adminRoom')"><br>
-                        <!-- Mic icon triggers recording -->
-
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="switchAdmin" class="mic-toggle" onchange="updateListeningCount()">
-                            <span class="slider round" ></span>
-                          </label> 
-                        <!-- <div class="battery-status">
-                            <p>Battery: <span class="battery-percentage">80%</span></p>
-                            <div class="battery-bar">
-                                <div class="battery-level" style="width: 80%;"></div>
-                            </div>
-                        </div> -->
-                        <div class="battery-status">
-                            <p>Battery: <span class="battery-percentage">--%</span></p>
-                            <div class="battery-bar">
-                                <div class="battery-level"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="tile" id="classRoom">
-                        <div class="d-flex justify-content-between">
-                            <h3 class="room-name">Class Room</h3>
-                            <!-- <label class="toggle-switch">
-                                <input type="checkbox"  class="mic-toggle" onchange="updateListeningCount()">
-                                <span class="slider round"></span>
-                            </label> -->
-                            <!-- rb -->
-                            <label class="rb" id="rbclass">
-                              <input type="checkbox" id="roomCheckbox" class="status-checkbox">
-                              <span class="checkmark"></span>
-                            </label><br>
-                            <script src="status.js"></script>
-                             
-                        </div>
-                        <img src="{{ url_for('static', filename='images/muteunmute.png') }}" alt="Mic" id="mic-class" class="mic" onclick="toggleMic('classRoom')"><br>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="switchClass" class="mic-toggle" onchange="updateListeningCount()">
-                            <span class="slider round" ></span>
-                          </label> 
-                        <!-- <div class="battery-status">
-                            <p>Battery: <span class="battery-percentage">90%</span></p>
-                            <div class="battery-bar">
-                                <div class="battery-level" style="width: 90%;"></div>
-                            </div>
-                        </div> -->
-                        <div class="battery-status">
-                            <p>Battery: <span class="battery-percentage">--%</span></p>
-                            <div class="battery-bar">
-                                <div class="battery-level"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                {% endfor %}
             </div>
 
             <!-- Survey Container -->
@@ -162,25 +84,19 @@
                 <div class="survey-grid">
                     <div class="survey-title">Survey</div>
                     <div class="rooms-listening">Rooms Listening: <span id="listeningCount">0</span></div>
-                    <div class="volume-control">
-                        <label for="volumeConference" class="rmtitle">Conference Room Volume:</label>
-                        <input type="range" id="volumeConference" class="volume-slider" min="0" max="100" value="50" onchange="updateAllRoomVolume()">
+                    <div class="volume-control master-volume-control">
+                        <label for="masterVolume" class="rmtitle">Master Volume:</label>
+                        <input type="range" id="masterVolume" class="volume-slider" min="0" max="100" value="50">
                     </div>
+                    {% for room in rooms %}
                     <div class="volume-control">
-                        <label for="volumeAdmin" class="rmtitle">Admin Room Volume:</label>
-                        <input type="range" id="volumeAdmin" class="volume-slider" min="0" max="100" value="50" onchange="updateAllRoomVolume()">
+                        <label for="{{ room.volume_id }}" class="rmtitle">{{ room.name }} Volume:</label>
+                        <input type="range" id="{{ room.volume_id }}" class="volume-slider" data-room="{{ room.id }}" min="0" max="100" value="50">
                     </div>
-                    <div class="volume-control">
-                        <label for="volumeClass" class="rmtitle">Class Room Volume:</label>
-                        <input type="range" id="volumeClass" class="volume-slider" min="0" max="100" value="50" onchange="updateAllRoomVolume()">
-                    </div>
-                    <!-- <div class="logo-container">
-                        <img src="{{ url_for('static', filename='images/mlogo.png') }}" alt="Mosaique Logo" class="mlogo">
-                    </div> -->
+                    {% endfor %}
                     <div class="profile-container">
                       <img src="{{ url_for('static', filename='images/micimg.png') }}" alt="Mic Icon" class="mic-icon">
-                      <p class="sp-name">Hiro Ishida</p>
-                      <p>CEO</p>
+                      <p class="sp-name">Hiro Ishida<br><span class="sp-title">CEO</span></p>
                   </div>
                 </div>
             </div>
