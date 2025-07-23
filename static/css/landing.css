@@ -1,3 +1,4 @@
+
 body {
     font-family: Arial, sans-serif;
     background-color: #1c1c1c;
@@ -39,7 +40,10 @@ body {
     background-color: #2a2a2a;
     padding: 20px;
     border-radius: 8px;
+
     height: calc(100% - 17.8%); /* Full height of the container */
+
+
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
@@ -47,11 +51,16 @@ body {
     margin: 0; /* Remove margin to align with container */
     position: fixed; /* Fix sidebar position */
     top: 10%; /* Start below the header */
+
     left: 0; /* Keep sidebar visible */
     z-index: 999; /* Ensure it stays on top */
     margin-left: 25px;
     margin-top: 27px;
     
+
+    
+}
+
 }
 
 .logo-container {
@@ -70,18 +79,23 @@ body {
     padding-top: 10px;
 }
 
+
 .mlogo-header {
     width: 80px; 
     height: 80px;
     align-items: center;
     justify-content: center;
+
+
     justify-items: center;
     margin-left: 80%;
     margin-top: 3px;
     padding-top: 10px;
 }
 
+
 .logo-text {
+
     padding-top: 13px;
 }
 
@@ -114,10 +128,12 @@ body {
     width: calc(100% - 220px); /* Adjust width to account for sidebar */
     padding: 20px;
     margin-left: 220px; /* Space for the fixed sidebar */
+
     height: calc(100vh - 60px); /* Full height of the container */
     overflow-y: auto; /* Allow scrolling within the main content if needed */
     transition: margin-left 0.3s ease; /* Smooth transition for main content */
     margin-top: -10px;
+
 
 }
 
@@ -137,6 +153,7 @@ body {
 @media (max-width: 768px) {
     .sidebar {
         width: 90%; /* Full width on mobile */
+
         height: 52%; /* Flexible height */
         min-height: 200px; /* Minimum height */
         padding: 15px;
@@ -147,6 +164,7 @@ body {
         transition: left 0.3s ease; /* Smooth transition */
         margin-top: 98px;
     }
+
 
     .sidebar.open {
         left: 0; /* Show sidebar */
@@ -193,6 +211,7 @@ body {
     }
 }
 
+
 /* Additional styles for radio buttons and toggles */
 .rb {
     position: relative;
@@ -202,12 +221,16 @@ body {
     margin-top: 3%;
 }
 .checkmark {
+
     height: 25px;
     width: 25px;
     background-color: #ff0000; /* Default red when off */
     border-radius: 50%;
     border: 2px solid #f9f9f9; /* Match border to background */
+
     display: inline-block; /* Ensure it behaves like a block element */
+
+
 }
 /* Optional: Add a class to change color when active */
 .checkmark.active {
@@ -224,6 +247,16 @@ body {
 }
 
 #rbclass {
+    margin-right: -28%;
+}
+
+/* rb adjusted */
+
+#rbadmin{
+    margin-right: -28%;
+}
+
+#rbclass{
     margin-right: -28%;
 }
 
@@ -354,6 +387,7 @@ input:checked + .slider:before {
     font-weight: bold;
     padding-bottom: 18px;
 }
+
 /* .master-volume-control { */
     /* Add a visual separator below the master volume */
     /* border-bottom: 1px solid #555; */
@@ -365,6 +399,7 @@ input:checked + .slider:before {
     /* Make the master volume label bold using CSS for proper alignment */
     font-weight: bold;
 }
+
 
 .volume-slider {
     width: 100%;
@@ -428,6 +463,7 @@ input:checked + .slider:before {
         width: 35px; /* Smaller mute/unmute buttons */
     }
 
+
     .header {
         display: flex; /* Show header on mobile */
         justify-content: space-between;
@@ -437,6 +473,7 @@ input:checked + .slider:before {
         position: sticky;
         top: 0;
         z-index: 1000; /* Ensure it stays on top */
+
     }
 
     .burger-menu {
@@ -444,6 +481,7 @@ input:checked + .slider:before {
         color: white;
         cursor: pointer;
         margin-top: 10px; /* Adjust margin to position lower */
+
     }
 
     .mlogo {
@@ -497,7 +535,9 @@ input:checked + .slider:before {
         padding-top: 13px;
     }
 
+
     .logo-container {
         margin-right: 20%;
     }
 }
+

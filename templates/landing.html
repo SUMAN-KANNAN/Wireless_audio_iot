@@ -50,10 +50,13 @@
         <div class="main-content">
             <div class="row">
                 <!-- Room Tiles -->
+
                 {% for room in rooms %}
+
                 <div class="col-md-4">
                     <div class="tile" id="{{ room.id }}">
                         <div class="d-flex justify-content-between">
+
                             <h3 class="room-name">{{ room.name }}</h3>
                             <label class="rb">
                               <span class="checkmark"></span>
@@ -64,6 +67,7 @@
                             <input type="checkbox" id="{{ room.switch_id }}" class="mic-toggle">
                             <span class="slider round" ></span>
                         </label>
+                            
                         <div class="battery-status">
                             <p>Battery: <span class="battery-percentage">--%</span></p>
                             <div class="battery-bar">

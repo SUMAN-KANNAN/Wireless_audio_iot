@@ -290,6 +290,7 @@ function muteAll() {
 }
 
 function unmuteAll() {
+
     // Send status update for all rooms
     if (statusSocket && statusSocket.readyState === WebSocket.OPEN) {
         statusSocket.send(JSON.stringify({ room: "all", status: "Active" }));
@@ -297,6 +298,7 @@ function unmuteAll() {
     // Turn on all toggles
     document.querySelectorAll('.mic-toggle').forEach(switchElement => {
         switchElement.checked = true;
+
     });
     // Activate microphone
     audioManager.activateMicrophone(); // <-- This triggers getUserMedia and shows the icon
@@ -467,4 +469,11 @@ function setStatusDot(roomId, newStatus) {
     } else {
         checkmark.style.backgroundColor = "#ff0000"; // Red
     }
+}
+// to open sidebar
+function toggleSidebar(){
+    const sidebar = document.querySelector('.sidebar');
+    const mainContent = document.querySelector('.main-content');
+    sidebar.classList.toggle('open');
+    mainContent.classList.toggle('shift');
 }

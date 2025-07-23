@@ -1,3 +1,4 @@
+
 # Core Flask and WebSocket dependencies
 Flask==2.3.3
 Flask-Sock==0.7.0
@@ -10,3 +11,4 @@ websockets>=10.0 # For virtual_esp32.py client
 # Production deployment (optional for development)
 gunicorn>=20.0
 gevent-websocket>=0.10.1
+
