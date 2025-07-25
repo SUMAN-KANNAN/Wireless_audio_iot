@@ -63,15 +63,34 @@ This allows you to run the dashboard and test it with simulated ESP32 devices wi
     pip install -r requirements.txt
     ```
 
-3.  **Start the Flask Server:**
+3.  **Install and Run Redis (for State Management):**
+    The server uses Redis to store the state of the rooms. You need to have it running locally. The easiest way on Windows is to use the Windows Subsystem for Linux (WSL).
+
+    - **Install WSL:** Open PowerShell as an Administrator and run:
+      ```powershell
+      wsl --install
+      ```
+      *This may require a system restart.*
+    - **Install Redis on WSL:** After WSL is set up (it usually installs Ubuntu by default), open your Ubuntu terminal and run:
+      ```bash
+      sudo apt update && sudo apt upgrade -y
+      sudo apt install redis-server -y
+      ```
+    - **Start the Redis Service:**
+      ```bash
+      sudo service redis-server start
+      ```
+    *You can now leave this terminal running in the background. Redis will be accessible to your Flask app at `localhost:6379`.*
+
+4.  **Start the Flask Server:**
     In the same terminal, run the server. It will show you the local IP address it's running on, which you'll need for the hardware setup.
     ```bash
     python app.py
     ```
     *The server is now running. You can access the dashboard, but no devices are connected yet.*
 
-4.  **Run Virtual ESP32 Devices (Optional):**
-    To test the dashboard, open **three new, separate terminals**. In each one, activate the virtual environment (`.\venv\Scripts\activate`) and run one of the following commands:
+5.  **Run Virtual ESP32 Devices (Optional, but Recommended for Testing):**
+    Ensure the Flask server from the previous step is still running. To test the dashboard, open **three new, separate terminals**. In each one, activate the virtual environment (`.\venv\Scripts\activate`) and run one of the following commands:
     ```bash
     # Terminal 1
     python virtual_esp32.py conferenceRoom
@@ -84,7 +103,7 @@ This allows you to run the dashboard and test it with simulated ESP32 devices wi
     ```
     *You will now see the rooms appear as "Online" on the dashboard.*
 
-5.  **Access the Dashboard:**
+6.  **Access the Dashboard:**
     - Open your web browser and go to `http://127.0.0.1:5000`.
     - Log in with default credentials: `admin` / `password` or `user` / `123`.
 
@@ -120,20 +139,31 @@ Follow these steps for each physical ESP32 device you want to connect to the sys
     - The `device_api_key` should match the one on the server (the default is fine for local testing).
 
 3.  **Configure `firmware.ino`:**
-    - **Set the Room ID:** Change the `THIS_ROOM_ID` variable to match the room this specific device will represent (e.g., `"conferenceRoom"`, `"adminRoom"`). Each device needs a unique ID.
-    - **Set the Server IP Address:** This is the most critical step. Find the `websocket_server_address` variable and change the IP address to match the computer running your Python server (e.g., `"192.168.1.114"`).
-    - **(Optional) Enable Real Battery Reading:** By default, the firmware simulates a random battery level. If you have a physical battery circuit, follow the comments in the `loop()` function to enable the real battery reading code.
+    - **Set the Room ID:** In `firmware.ino`, change the `THIS_ROOM_ID` variable to match the `id` of a room defined in the server's `config.json` file (e.g., `"conferenceRoom"`, `"adminRoom"`). Each physical device needs a unique ID.
+    - **Server IP Address:** No changes are needed for local development. The firmware uses mDNS to automatically discover the server. For production deployment, you will need to modify the firmware to use your server's public IP address.
 
 4.  **Upload the Firmware:**
     - Go to `Tools > Board > ESP32 Arduino` and select `ESP32 Dev Module`.
     - Connect your ESP32, select the correct `Port` under `Tools`.
     - Click the "Upload" button (the arrow icon).
 
-5.  **Troubleshooting Uploads:**
-    - If you see an error like `Failed to connect to ESP32: Wrong boot mode detected`, it means the board didn't enter "Download Mode".
-    - **To fix this:** Click "Upload" again. As soon as you see "Connecting........" in the console, **press and hold** the "BOOT" or "IO0" button on your ESP32. Release it once the upload starts.
-
-6.  **Verify Operation:**
+5.  **Verify Operation:**
     - After uploading, open the `Tools > Serial Monitor` (set baud rate to `115200`).
-    - You should see messages that it's connecting to WiFi and then to your server.
+    - You should see messages that it's connecting to WiFi and then discovering and connecting to your server.
     - The device will now appear on your dashboard.
+
+---
+
+## Section 3: System Operations
+
+### Adding a New Room
+
+1.  **Server:** Open the `config.json` file. Add a new JSON object for your new room, following the existing format.
+2.  **Firmware:** Take a new ESP32 device, set its `THIS_ROOM_ID` in `firmware.ino` to the `id` you just created, and upload the firmware.
+3.  **Restart:** Restart the Python server. The new room will automatically appear on the dashboard.
+
+### Troubleshooting Uploads
+
+If you see an error like `Failed to connect to ESP32: Wrong boot mode detected`, it means the board didn't enter "Download Mode".
+
+- **To fix this:** Click "Upload" again. As soon as you see "Connecting........" in the console, **press and hold** the "BOOT" or "IO0" button on your ESP32. Release it once the upload starts.

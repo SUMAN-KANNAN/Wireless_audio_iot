@@ -2,6 +2,10 @@ let volumeSocket;
 let statusSocket;
 let batterySocket;
 
+// --- STATE MANAGEMENT UPGRADE ---
+const roomStates = {}; // Central object to hold the last known state for each room.
+const deviceTimeouts = {}; // Holds timeout IDs to detect disconnected devices.
+
 function updateBatteryDisplay(roomId, percentage) {
     const CRITICAL_LEVEL = 20;
     const WARNING_LEVEL = 50;
@@ -10,10 +14,10 @@ function updateBatteryDisplay(roomId, percentage) {
 
     if (percentageElement && levelElement) {
         // Handle null or undefined percentage, which can happen on initial load
-        if (percentage === null || typeof percentage === 'undefined' || isNaN(percentage)) {
+        if (percentage === null || typeof percentage === 'undefined') {
             percentageElement.textContent = `--%`;
-            levelElement.style.width = `100%`; // Fill the bar to show it's an error/unknown state
-            levelElement.style.backgroundColor = '#cc0000'; // Darker red for unknown/error
+            levelElement.style.width = `0%`; // Show an empty bar for unknown/disconnected state
+            levelElement.style.backgroundColor = '#f0f0f0'; // Match the empty bar background
         } else {
             percentageElement.textContent = `${percentage}%`;
             levelElement.style.width = `${percentage}%`;
@@ -28,9 +32,62 @@ function updateBatteryDisplay(roomId, percentage) {
             }
         }
     }
-    // After updating the battery, re-evaluate the status dot color
-    // This ensures the dot turns red if the battery state becomes unknown.
-    setStatusDot(roomId, null);
+}
+
+function resetDeviceTimeout(roomId) {
+    if (deviceTimeouts[roomId]) {
+        clearTimeout(deviceTimeouts[roomId]);
+    }
+    // Set a timeout for 90 seconds. If it fires, the device is considered disconnected.
+    deviceTimeouts[roomId] = setTimeout(() => {
+        console.warn(`No signal from ${roomId} for 90 seconds. Marking as disconnected.`);
+        if (roomStates[roomId]) {
+            roomStates[roomId].status = 'Disconnected';
+            // Clear battery state on disconnect to ensure UI updates correctly
+            delete roomStates[roomId].battery;
+        }
+        updateTileUI(roomId); // Update the UI to reflect the disconnected state.
+    }, 90000);
+}
+
+function updateTileUI(roomId) {
+    const tile = document.getElementById(roomId);
+    if (!tile) return;
+
+    const checkmark = tile.querySelector('.checkmark');
+    const toggle = tile.querySelector('.mic-toggle');
+
+    const state = roomStates[roomId] || {};
+    const status = state.status;
+    const battery = state.battery;
+
+    // First, update the battery bar display, as it's independent of status color.
+    updateBatteryDisplay(roomId, battery);
+
+    // A device is considered connected if we have a valid status and battery level.
+    const isConnected = status && status !== 'Disconnected' && typeof battery !== 'undefined';
+
+    if (!isConnected) {
+        // RED STATE: Disconnected or Error
+        checkmark.style.backgroundColor = '#ff0000'; // Red
+        toggle.disabled = true;
+        // If the device just disconnected, ensure its toggle is programmatically turned off.
+        if (toggle.checked) {
+            toggle.checked = false;
+            // Dispatch a change event to ensure the audioManager cleans up the connection.
+            toggle.dispatchEvent(new Event('change'));
+        }
+    } else {
+        // Device is connected, so enable the toggle.
+        toggle.disabled = false;
+        if (status === 'Active') {
+            // GREEN STATE: Connected and Active
+            checkmark.style.backgroundColor = '#4caf50'; // Green
+        } else { // status === 'Sleep'
+            // ORANGE STATE: Connected and Idle
+            checkmark.style.backgroundColor = '#ffbb33'; // Orange
+        }
+    }
 }
 
 function createAuthenticatedSocket(path) {
@@ -51,7 +108,11 @@ function connectBatteryWebSocket() {
         try {
             const data = JSON.parse(event.data);
             if (data.room && data.percentage !== undefined) {
-                updateBatteryDisplay(data.room, data.percentage);
+                // Update the central state and then update the entire tile UI.
+                if (!roomStates[data.room]) roomStates[data.room] = {};
+                roomStates[data.room].battery = data.percentage;
+                updateTileUI(data.room);
+                resetDeviceTimeout(data.room);
             }
         } catch (e) {
             console.error("Error parsing battery message:", e);
@@ -81,8 +142,21 @@ function connectStatusWebSocket() {
 
         if (!roomId || !newStatus) return;
 
-        // Update the status dot, which will also check battery level
-        setStatusDot(roomId, newStatus);
+        if (!roomStates[roomId]) roomStates[roomId] = {};
+        roomStates[roomId].status = newStatus;
+
+        // Sync the toggle's visual state with the reported device status.
+        // This ensures the UI is accurate if a status changes from the server-side.
+        const toggle = document.querySelector(`#${roomId} .mic-toggle`);
+        if (toggle) {
+            const shouldBeChecked = (newStatus === 'Active');
+            if (toggle.checked !== shouldBeChecked) {
+                toggle.checked = shouldBeChecked;
+            }
+        }
+
+        updateTileUI(roomId);
+        resetDeviceTimeout(roomId);
     };
 
     statusSocket.onclose = () => {
@@ -146,40 +220,28 @@ const audioManager = {
     isMicActive: false,
     activeRoomSockets: {}, // { roomId: WebSocket }
 
-    async toggleMic(roomId) {
-        let switchId = '';
-        switch (roomId) {
-            case 'conferenceRoom': switchId = 'switchConference'; break;
-            case 'adminRoom': switchId = 'switchAdmin'; break;
-            case 'classRoom': switchId = 'switchClass'; break;
-            default: return;
-        }
-
-        const switchElement = document.getElementById(switchId);
-        if (!switchElement) return;
-
-        updateListeningCount();
-
-        if (switchElement.checked) {
+    async toggleMic(roomId, isTurningOn) {
+        if (isTurningOn) {
             // Turning ON
             if (Object.keys(this.activeRoomSockets).length === 0) {
                 await this.activateMicrophone();
             }
             const ws = createAuthenticatedSocket('/ws/audio');
             ws.onopen = () => {
+                // Identify this browser tab as the audio source for a specific room
                 ws.send(JSON.stringify({ type: 'room_identification', roomId, client_type: 'browser' }));
             };
             ws.onerror = (e) => { console.error(`Audio WS error for ${roomId}:`, e); };
             ws.onclose = () => { console.log(`Audio WS closed for ${roomId}`); };
             this.activeRoomSockets[roomId] = ws;
 
+            // Inform the server that this device is now active
             if (statusSocket && statusSocket.readyState === WebSocket.OPEN) {
                 statusSocket.send(JSON.stringify({ room: roomId, status: "Active" }));
             }
-            setStatusDot(roomId, "Active");
         } else {
             // Turning OFF
-            if (this.activeRoomSockets[roomId]) {
+            if (this.activeRoomSockets[roomId]) { // Close the specific WebSocket for this room
                 this.activeRoomSockets[roomId].close();
                 delete this.activeRoomSockets[roomId];
             }
@@ -187,9 +249,9 @@ const audioManager = {
                 this.deactivateMicrophone();
             }
             if (statusSocket && statusSocket.readyState === WebSocket.OPEN) {
+                // Inform the server that this device is now in sleep mode
                 statusSocket.send(JSON.stringify({ room: roomId, status: "Sleep" }));
             }
-            setStatusDot(roomId, "Sleep");
         }
     },
 
@@ -269,50 +331,63 @@ window.addEventListener('beforeunload', () => {
 });
 
 function muteAll() {
-    const switches = document.querySelectorAll('.mic-toggle');
-    switches.forEach(switchElement => {
-        if (switchElement.checked) {
-            const switchId = switchElement.id;
-            let roomId = '';
-            if (switchId.includes('Conference')) roomId = 'conferenceRoom';
-            else if (switchId.includes('Admin')) roomId = 'adminRoom';
-            else if (switchId.includes('Class')) roomId = 'classRoom';
+    // Send a single "Sleep" command to the server, which will broadcast it.
+    // This is the most efficient way to update all devices and other connected clients.
+    if (statusSocket && statusSocket.readyState === WebSocket.OPEN) {
+        statusSocket.send(JSON.stringify({ room: "all", status: "Sleep" }));
+    }
 
-            if (roomId && statusSocket && statusSocket.readyState === WebSocket.OPEN) {
-                const statusMessage = { room: roomId, status: "Sleep" };
-                statusSocket.send(JSON.stringify(statusMessage));
-            }
+    // On the UI, immediately turn off all toggles that are currently on.
+    document.querySelectorAll('.mic-toggle').forEach(toggle => {
+        if (toggle.checked) {
+            toggle.checked = false;
+            // Manually dispatch the change event to trigger all associated logic
+            // (e.g., stopping the audio stream for that specific room).
+            toggle.dispatchEvent(new Event('change'));
         }
-        switchElement.checked = false;
     });
-    audioManager.deactivateMicrophone();
-    updateListeningCount();
 }
 
 function unmuteAll() {
-    // Send status update for all rooms
+    // Send a single "Active" command to the server to be broadcast to all devices.
     if (statusSocket && statusSocket.readyState === WebSocket.OPEN) {
         statusSocket.send(JSON.stringify({ room: "all", status: "Active" }));
     }
-    // Turn on all toggles
-    document.querySelectorAll('.mic-toggle').forEach(switchElement => {
-        switchElement.checked = true;
+
+    // --- LOGIC UPGRADE: Only unmute devices that are actually connected ---
+    // On the UI, only turn on toggles for devices that are not in a 'Red' state.
+    document.querySelectorAll('.mic-toggle').forEach(toggle => {
+        const tile = toggle.closest('.tile');
+        if (!tile) return;
+        const roomId = tile.id;
+
+        const state = roomStates[roomId] || {};
+        const isConnected = state.status && state.status !== 'Disconnected' && typeof state.battery !== 'undefined';
+
+        // If the device is connected and its toggle is off, turn it on.
+        if (isConnected && !toggle.checked) {
+            toggle.checked = true;
+            toggle.dispatchEvent(new Event('change'));
+        }
     });
-    // Activate microphone
-    audioManager.activateMicrophone(); // <-- This triggers getUserMedia and shows the icon
-    updateListeningCount();
 }
 
 document.querySelectorAll('.mic-toggle').forEach(toggle => {
     toggle.addEventListener('change', (event) => {
-        const switchId = event.target.id;
-        let roomId = '';
-        if (switchId.includes('Conference')) roomId = 'conferenceRoom';
-        else if (switchId.includes('Admin')) roomId = 'adminRoom';
-        else if (switchId.includes('Class')) roomId = 'classRoom';
+        const tile = event.target.closest('.tile');
+        if (!tile) return;
+        const roomId = tile.id;
+        const isChecked = event.target.checked;
 
-        audioManager.toggleMic(roomId);
-        checkAndDeactivateMicIfNoneActive();
+        // --- OPTIMISTIC UI UPDATE ---
+        // Immediately update the UI for a responsive feel, without waiting for the server.
+        const newStatus = isChecked ? "Active" : "Sleep";
+        if (!roomStates[roomId]) roomStates[roomId] = {};
+        roomStates[roomId].status = newStatus;
+        updateTileUI(roomId);
+
+        audioManager.toggleMic(roomId, isChecked);
+        updateListeningCount();
     });
 });
 
@@ -345,17 +420,23 @@ function loadInitialStates() {
         .then(states => {
             for (const roomId in states) {
                 const roomState = states[roomId];
+                // Initialize the state object for the room.
                 if (roomState.status) {
-                    setStatusDot(roomId, roomState.status.status);
+                    roomStates[roomId] = { status: roomState.status.status };
                 }
                 if (roomState.battery) {
-                    updateBatteryDisplay(roomId, roomState.battery.percentage);
+                    if (!roomStates[roomId]) roomStates[roomId] = {};
+                    roomStates[roomId].battery = roomState.battery.percentage;
                 }
                 if (roomState.volume) {
                     const volumeSlider = document.getElementById(`volume${roomId.charAt(0).toUpperCase() + roomId.slice(1)}`);
-                    if (volumeSlider) {
-                        volumeSlider.value = roomState.volume.volume;
-                    }
+                    if (volumeSlider) volumeSlider.value = roomState.volume.volume;
+                }
+                // Now update the entire tile's UI based on the loaded state.
+                updateTileUI(roomId);
+                // If the device was connected, start its disconnect timer.
+                if (roomStates[roomId] && roomStates[roomId].status !== 'Disconnected') {
+                    resetDeviceTimeout(roomId);
                 }
             }
             // After setting individual sliders, update the master slider
@@ -376,22 +457,37 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize UI elements
     updateListeningCount();
 
+    // --- ROBUSTNESS UPGRADE: Make mic icon click handler more reliable ---
+    // This ensures that clicking the mic icon correctly toggles the switch.
     document.querySelectorAll('.mic').forEach(micIcon => {
         micIcon.addEventListener('click', (event) => {
-            const roomId = event.target.closest('.tile').id;
-            const roomName = roomId.replace('Room', '');
-            const switchId = `switch${roomName.charAt(0).toUpperCase() + roomName.slice(1)}`;
-            const switchElement = document.getElementById(switchId);
+            const tile = event.target.closest('.tile');
+            if (!tile) return;
+            const roomId = tile.id;
+
+            // --- LOGIC UPGRADE: Check status before allowing click ---
+            // A user should not be able to activate a disconnected (Red) device.
+            const state = roomStates[roomId] || {};
+            const isConnected = state.status && state.status !== 'Disconnected' && typeof state.battery !== 'undefined';
+
+            if (!isConnected) {
+                console.log(`Action blocked: Device ${roomId} is disconnected.`);
+                return; // Do nothing if the device is not connected.
+            }
+
+            const switchElement = tile.querySelector('.mic-toggle');
             if (switchElement) {
-                switchElement.checked = !switchElement.checked;
-                const changeEvent = new Event('change');
-                switchElement.dispatchEvent(changeEvent);
+                // Programmatically clicking the hidden checkbox is the cleanest way
+                // to trigger its 'change' event and all associated logic.
+                switchElement.click();
             }
         });
     });
 
-    // Add event listeners for all volume sliders
-    document.querySelectorAll('.volume-slider').forEach(slider => {
+    // --- BUG FIX: Make selector more specific to avoid adding this listener to the master slider ---
+    // Add event listeners for individual room volume sliders only.
+    // This prevents the master slider from fighting with itself when all room volumes are the same.
+    document.querySelectorAll('.volume-slider[data-room]').forEach(slider => {
         // When an individual slider is moved, update the master slider's state
         slider.addEventListener('input', updateMasterSliderState);
         // Send the final value when the user is done sliding
@@ -415,14 +511,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-function checkAndDeactivateMicIfNoneActive() {
-    const toggles = document.querySelectorAll('.mic-toggle');
-    const anyActive = Array.from(toggles).some(toggle => toggle.checked);
-    if (!anyActive) {
-        audioManager.deactivateMicrophone();
-    }
-}
-
 function updateMasterSliderState() {
     const masterVolumeSlider = document.getElementById('masterVolume');
     if (!masterVolumeSlider) return;
@@ -435,36 +523,5 @@ function updateMasterSliderState() {
 
     if (allSame) {
         masterVolumeSlider.value = firstValue;
-    }
-}
-
-function setStatusDot(roomId, newStatus) {
-    const tileElement = document.getElementById(roomId);
-    if (!tileElement) return;
-
-    const checkmark = tileElement.querySelector('.checkmark');
-    if (!checkmark) return;
-
-    // Determine the status to check. If a new status came in, use it.
-    // Otherwise, infer the current status from the dot's color.
-    let isActive;
-    if (newStatus !== null) {
-        // Store the latest status on the element itself
-        checkmark.dataset.status = newStatus;
-        isActive = (newStatus === "Active" || newStatus === "On");
-    } else {
-        // Re-evaluating, so use the stored status
-        isActive = (checkmark.dataset.status === "Active" || checkmark.dataset.status === "On");
-    }
-
-    // Get the current battery level from the display
-    const batteryText = tileElement.querySelector('.battery-percentage').textContent;
-    const currentBattery = parseInt(batteryText); // Will be NaN if text is '--%'
-
-    // A device is "On" (green) only if it's Active AND its battery is known AND has power.
-    if (isActive && !isNaN(currentBattery) && currentBattery > 0) {
-        checkmark.style.backgroundColor = "#4caf50"; // Green
-    } else {
-        checkmark.style.backgroundColor = "#ff0000"; // Red
     }
 }

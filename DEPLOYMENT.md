@@ -70,6 +70,12 @@ Run these commands on the EC2 instance via your SSH connection.
     ```bash
     sudo apt install python3-pip python3-venv git -y
     ```
+3.  **Install and Run Redis (for State Management):**
+    Redis is used for robust, high-performance state management, replacing the local JSON files.
+    ```bash
+    sudo apt install redis-server -y
+    sudo systemctl enable redis-server.service # Ensures Redis starts on boot
+    ```
 
 ---
 
@@ -96,16 +102,49 @@ Run these commands on the EC2 instance via your SSH connection.
 
 ---
 
-### Step 5: Run the App with Gunicorn
+### Step 5: Run the App as a Systemd Service (Production Method)
 
-The Flask development server (`python app.py`) is not for production. We will use Gunicorn, a robust WSGI server.
+The Flask development server is not for production. Using `nohup` is better, but the professional way to run a long-term application on Linux is with `systemd`. This ensures your app starts on boot and restarts automatically if it crashes.
 
-1.  **Run the Gunicorn Command:**
-    The `geventwebsocket` worker is crucial for handling the WebSocket connections. To keep the server running after you close your SSH session, run it with `nohup`:
+1.  **Create the Service File:**
+    First, you need to create a service file for `systemd`. A template for this file is included in the repository at `deployment/wireless-audio.service`. You will create and edit this file on your server.
     ```bash
-    nohup gunicorn --worker-class geventwebsocket.gunicorn.workers.GeventWebSocketWorker -w 1 --bind 0.0.0.0:5000 app:app &
+    sudo nano /etc/systemd/system/wireless-audio.service
     ```
-    - The `&` at the end runs the process in the background. You can now safely close your SSH terminal.
+    Paste the following content into the editor. **Important:** If you used different secret keys in the previous step, update the `Environment` lines here to match.
+
+    ```ini
+    [Unit]
+    Description=Gunicorn instance to serve the Wireless Audio System
+    After=network.target redis-server.service
+
+    [Service]
+    User=ubuntu
+    WorkingDirectory=/home/ubuntu/Wireless_audio_iot
+    Environment="SECRET_KEY=a-very-strong-and-random-secret-key"
+    Environment="DEVICE_API_KEY=a-different-super-secret-key"
+    ExecStart=/home/ubuntu/Wireless_audio_iot/venv/bin/gunicorn --worker-class geventwebsocket.gunicorn.workers.GeventWebSocketWorker -w 1 --bind 0.0.0.0:5000 app:app
+    Restart=always
+
+    [Install]
+    WantedBy=multi-user.target
+    ```
+    - Press `Ctrl+X`, then `Y`, then `Enter` to save and exit `nano`.
+
+2.  **Start and Enable the Service:**
+    Now, tell `systemd` to start your service and enable it to launch automatically on boot.
+    ```bash
+    sudo systemctl daemon-reload
+    sudo systemctl start wireless-audio
+    sudo systemctl enable wireless-audio
+    ```
+
+3.  **Check the Status:**
+    You can verify that the service is running correctly:
+    ```bash
+    sudo systemctl status wireless-audio
+    ```
+    - Press `q` to exit the status view. You can now safely close your SSH connection, and the server will keep running.
 
 ---
 

@@ -1,16 +1,15 @@
 #include <WebSocketsClient.h> // Using the more common WebSockets library by Markus Sattler
 #include <WiFi.h>
 #include <driver/i2s.h> // Include the I2S driver library
-#include <ArduinoJson.h> // Include ArduinoJson for parsing messages
-#include <esp_sleep.h> // Include for light sleep functions
+#include <ArduinoJson.h>  // Include ArduinoJson for parsing messages
 #include <driver/adc.h> // Include ADC driver for battery reading
-#include "secrets.h" // Include your WiFi credentials and API key
+#include <ESPmDNS.h>      // Include for mDNS service discovery
+#include "secrets.h"      // Include your WiFi credentials and API key
 
-// WebSocket server address (replace with your server's IP or domain)
-// ** CRITICAL: This IP address MUST match the IP of the computer running the Flask server. **
-// Your server output shows it's running on 192.168.1.114
-const char* websocket_server_address = "192.168.1.114"; // Your local server IP
-const uint16_t websocket_server_port = 5000;
+// --- ARCHITECTURAL UPGRADE: Service Discovery ---
+// These variables will be populated automatically by mDNS, removing the need for a hardcoded IP.
+String server_address;
+uint16_t server_port = 0;
 
 // Each physical ESP32 device must have a unique room ID that matches one of the rooms on the server dashboard.
 const char* THIS_ROOM_ID = "conferenceRoom"; // <-- SET THIS FOR EACH ESP32 (e.g., "adminRoom", "classRoom")
@@ -38,12 +37,6 @@ int16_t audio_buffer[audio_buffer_size];
 // MAX98357A volume control pin (adjust pin number)
 #define VOLUME_CONTROL_PIN 13  // Example GPIO pin
 
-// Reconnection logic variables
-unsigned long lastAudioReconnectAttempt = 0;
-unsigned long lastStatusReconnectAttempt = 0;
-unsigned long lastBatteryReconnectAttempt = 0;
-const unsigned long reconnectInterval = 5000; // Reconnect attempt interval: 5 seconds
-
 // Function to connect to WiFi (keep as is)
 void connectWiFi() {
     Serial.printf("Connecting to WiFi SSID: %s\n", ssid);
@@ -56,6 +49,29 @@ void connectWiFi() {
     Serial.println("\nWiFi Connected!");
     Serial.print("IP Address: ");
     Serial.println(WiFi.localIP());
+}
+
+void discoverAudioServer() {
+    Serial.println("Searching for audio server via mDNS...");
+    if (!MDNS.begin(THIS_ROOM_ID)) {
+        Serial.println("Error setting up MDNS responder!");
+        return;
+    }
+
+    while (server_port == 0) {
+        // Query for the service type "_web-audio" and protocol "_tcp"
+        int n = MDNS.queryService("web-audio", "tcp");
+        if (n == 0) {
+            Serial.println("No audio server found, retrying in 5 seconds...");
+            delay(5000);
+        } else {
+            Serial.printf("%d service(s) found\n", n);
+            server_address = MDNS.IP(0).toString();
+            server_port = MDNS.port(0);
+            Serial.printf("Audio Server Found! Address: %s:%d\n", server_address.c_str(), server_port);
+            break; // Exit the loop once the server is found
+        }
+    }
 }
 
 // Function to initialize I2S (keep as is for now)
@@ -83,7 +99,6 @@ void i2s_init() {
 
     i2s_driver_install(I2S_NUM, &i2s_config, 0, NULL);
     i2s_set_pin(I2S_NUM, &pin_config);
-    i2s_set_clk(I2S_NUM, SAMPLE_RATE, BITS_PER_SAMPLE, I2S_CHANNEL_MONO); // Set sample rate, bits, and MONO channel
     i2s_zero_dma_buffer(I2S_NUM); // Clear DMA buffer to prevent noise on startup
 }
 
@@ -118,22 +133,19 @@ int voltageToPercentage(float voltage) {
 }
 
 void setVolume(int volume) {
-    // This function maps the 0-100 volume slider to the two gain levels
-    // available on the MAX98357A's GAIN pin (HIGH/LOW).
-    // We'll use 50% as the threshold.
-    int gainLevel;
-    if (volume >= 50) {
-        gainLevel = HIGH; // Higher gain setting
-    } else {
-        gainLevel = LOW;  // Lower gain setting
-    }
+    // --- UPGRADE: Granular Volume Control using PWM ---
+    // Map the 0-100 volume from the dashboard to an 8-bit PWM duty cycle (0-255).
+    // The MAX98357A's SD_MODE (shutdown) pin can be driven by PWM for volume control.
+    // A non-linear (e.g., logarithmic) curve can feel more natural to the human ear,
+    // but a linear mapping is a great first step.
+    int dutyCycle = map(volume, 0, 100, 0, 255);
 
-    // You might need to invert HIGH/LOW depending on your MAX98357A module's wiring.
-    // For example, if HIGH is quieter than LOW, swap them in the if/else block above.
-    digitalWrite(VOLUME_CONTROL_PIN, gainLevel);
-    Serial.printf("Setting volume. Level: %d -> Gain Pin: %s\n",
-                  volume,
-                  gainLevel == HIGH ? "HIGH" : "LOW");
+    // NOTE: Depending on the amplifier board's logic, you might need to invert the mapping.
+    // If 100% volume becomes silent, use this line instead:
+    // int dutyCycle = map(volume, 0, 100, 255, 0);
+    
+    ledcWrite(0, dutyCycle); // Write the duty cycle to the configured PWM channel (0).
+    Serial.printf("Setting volume. Level: %d -> PWM Duty Cycle: %d\n", volume, dutyCycle);
 }
 
 // --- WebSocket Event Handlers ---
@@ -145,6 +157,12 @@ void audioWebSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
       // Stop the I2S driver and clear its buffer when the audio stream stops.
       i2s_stop(I2S_NUM);
       i2s_zero_dma_buffer(I2S_NUM);
+      // --- RELIABILITY FIX: Report that the device is now in a sleep state ---
+      if (statusClient.isConnected()) {
+          String statusMessage = "{\"room\": \"" + String(THIS_ROOM_ID) + "\", \"status\": \"Sleep\"}";
+          statusClient.sendTXT(statusMessage);
+          Serial.printf("Sent Sleep status: %s\n", statusMessage.c_str());
+      }
       break;
     case WStype_CONNECTED:
       Serial.printf("[AudioWS] Connected to url: %s\n", payload);
@@ -204,6 +222,32 @@ void statusWebSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
             break;
         case WStype_TEXT:
             Serial.printf("[StatusWS] Received text: %s\n", payload);
+            // --- REACT TO SERVER COMMANDS ---
+            // This allows the dashboard to turn the device on or off remotely.
+            {
+                StaticJsonDocument<200> doc;
+                DeserializationError error = deserializeJson(doc, payload, length);
+                if (error) {
+                    Serial.print("JSON parsing failed on Status WebSocket: ");
+                    Serial.println(error.c_str());
+                    return;
+                }
+
+                // Check if the command is for this specific device
+                if (doc.containsKey("room") && String(doc["room"]) == THIS_ROOM_ID && doc.containsKey("status")) {
+                    String newStatus = doc["status"];
+                    Serial.printf("Received status command for this room: %s\n", newStatus.c_str());
+
+                    if ((newStatus == "Active" || newStatus == "On") && !audioClient.isConnected()) {
+                        Serial.println("Server commanded to turn ON. Re-initiating audio connection...");
+                        // Re-call begin() to establish a new connection if it was manually disconnected.
+                        audioClient.begin(server_address, server_port, "/ws/audio");
+                    } else if ((newStatus == "Sleep" || newStatus == "Off") && audioClient.isConnected()) {
+                        Serial.println("Server commanded to turn OFF. Disconnecting audio client...");
+                        audioClient.disconnect();
+                    }
+                }
+            }
             break;
         default:
             break;
@@ -226,28 +270,22 @@ void batteryWebSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
     }
 }
 
-// Helper function to manage WebSocket connections in a non-blocking way
-void checkAndReconnectClient(WebSocketsClient &client, const char* path, unsigned long &lastAttempt) {
-    unsigned long now = millis();    
-    // Check if client is disconnected AND if the reconnect interval has passed.
-    if (!client.isConnected() && (now - lastAttempt > reconnectInterval)) {
-        String url = String(path) + "?token=" + device_api_key;
-        // Print the full WebSocket URL for easier debugging
-        Serial.printf("Attempting to connect to: ws://%s:%d%s\n", websocket_server_address, websocket_server_port, url.c_str());
-        client.begin(websocket_server_address, websocket_server_port, url.c_str());
-        lastAttempt = now; // Update the last attempt time
-    }
-}
 void setup() {
     Serial.begin(115200);
     delay(1000);
 
     connectWiFi(); // Connect to WiFi
 
-    pinMode(VOLUME_CONTROL_PIN, OUTPUT); // Set the volume control pin as an output
+    // Discover the server on the network
+    discoverAudioServer();
 
-    pinMode(VOLUME_CONTROL_PIN, OUTPUT); // Set the volume control pin as an output
-    digitalWrite(VOLUME_CONTROL_PIN, HIGH); // Initialize to a default volume
+    // --- Initialize PWM for Volume Control ---
+    // Setup LEDC channel 0, with a 5kHz frequency and 8-bit resolution (0-255).
+    ledcSetup(0, 5000, 8);
+    // Attach the volume control pin to the configured PWM channel.
+    ledcAttachPin(VOLUME_CONTROL_PIN, 0);
+    setVolume(50); // Set a default volume on startup.
+
     // Configure ADC for real battery reading
     adc1_config_width(ADC_WIDTH_BIT_12);
     adc1_config_channel_atten(BATTERY_ADC_CHANNEL, ADC_ATTEN_DB_11);
@@ -258,12 +296,23 @@ void setup() {
     audioClient.onEvent(audioWebSocketEvent);
     statusClient.onEvent(statusWebSocketEvent);
     batteryClient.onEvent(batteryWebSocketEvent);
-    
-    // Initial connection attempts are handled by the reconnection manager
-    checkAndReconnectClient(audioClient, "/ws/audio", lastAudioReconnectAttempt);
-    checkAndReconnectClient(statusClient, "/ws/status", lastStatusReconnectAttempt);
-    checkAndReconnectClient(batteryClient, "/ws/battery", lastBatteryReconnectAttempt);
 
+    const unsigned long reconnectInterval = 5000; // 5 seconds
+    audioClient.setReconnectInterval(reconnectInterval);
+    statusClient.setReconnectInterval(reconnectInterval);
+    batteryClient.setReconnectInterval(reconnectInterval);
+
+    // --- SECURITY UPGRADE: Use HTTP Headers for Authentication ---
+    // Sending the API key in a header is more secure than a query parameter.
+    String apiKeyHeader = "X-API-Key: " + String(device_api_key);
+    audioClient.setExtraHeaders(apiKeyHeader.c_str());
+    statusClient.setExtraHeaders(apiKeyHeader.c_str());
+    batteryClient.setExtraHeaders(apiKeyHeader.c_str());
+
+    // Begin the initial connection for all clients (no token in URL)
+    audioClient.begin(server_address, server_port, "/ws/audio");
+    statusClient.begin(server_address, server_port, "/ws/status");
+    batteryClient.begin(server_address, server_port, "/ws/battery");
     Serial.println("\n--- Setup complete. Device is ready. ---");
 }
  
@@ -272,11 +321,6 @@ void loop() {
     audioClient.loop();
     statusClient.loop();
     batteryClient.loop();
-    
-    // Continuously check and manage WebSocket connections
-    checkAndReconnectClient(audioClient, "/ws/audio", lastAudioReconnectAttempt);
-    checkAndReconnectClient(statusClient, "/ws/status", lastStatusReconnectAttempt);
-    checkAndReconnectClient(batteryClient, "/ws/battery", lastBatteryReconnectAttempt);
 
     // --- Battery Measurement and Sending Logic ---
     unsigned long currentMillis = millis();

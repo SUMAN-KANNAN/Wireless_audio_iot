@@ -9,58 +9,55 @@ body {
 
 .header {
     display: flex; /* Show header on desktop */
-    justify-content: space-between;
+    justify-content: space-between; /* Pushes items to opposite ends */
     align-items: center;
-    background-color: #2a2a2a;
-    padding: 5px;
+    background-color: #2a2a2a;    
     position: sticky;
     top: 0;
     z-index: 1000; /* Ensure it stays on top */
-    height: 10%; /* Adjust header height */
+    height: 80px; /* Use a fixed height for predictability */
+    padding: 0 20px; /* Add horizontal padding for spacing from edges */
 }
 
 .burger-menu {
     font-size: 30px;
-    color: white;
+    color: #fff;
     cursor: pointer;
-    margin-left: 10px; /* Adjust margin for better positioning */
-    padding-left: 20px;
 }
 
 .container-fluid {
     display: flex;
     padding: 20px;
     flex-direction: row; /* Default to row layout */
-    height: calc(100% - 10%); /* Adjust height to fill remaining space below header */
+    height: calc(100vh - 80px); /* Fill remaining space below header */
 }
 
 .sidebar {
     width: 200px; /* Fixed width for desktop */
+    position: fixed; /* Fix sidebar position */
+    height: 100vh; /* Full viewport height */
     background-color: #2a2a2a;
     padding: 20px;
-    border-radius: 8px;
-    height: calc(100% - 17.9%); /* Full height of the container */
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
     align-items: center; /* Center all child elements horizontally */
-    margin: 0; /* Remove margin to align with container */
-    position: fixed; /* Fix sidebar position */
-    top: 10%; /* Start below the header */
-    left: 0; /* Keep sidebar visible */
+    justify-content: space-between; /* Push content to top and bottom */
+    top: 0; /* Align to the top of the viewport */
+    left: -220px; /* Start hidden off-screen */
     z-index: 999; /* Ensure it stays on top */
-    margin-left: 25px;
-    margin-top: 27px;
-    
+    transition: left 0.3s ease; /* Smooth transition */
 }
 
+.sidebar.open {
+    left: 0; /* Show sidebar when open */
+}
+
+/* This rule now correctly styles the logo container in the header */
 .logo-container {
     display: flex;
-    justify-content: left;
-    align-items: left;
-    margin-bottom: 20px;
-    width: 100%; /* Take full width of sidebar */
-    margin-top: 3px;
+    align-items: center;
+    /* Margin is no longer needed due to header padding and justify-content */
 }
 
 .mlogo {
@@ -71,18 +68,16 @@ body {
 }
 
 .mlogo-header {
-    width: 80px; 
-    height: 80px;
-    align-items: center;
-    justify-content: center;
-    justify-items: center;
-    margin-left: 80%;
-    margin-top: 3px;
-    padding-top: 10px;
+    width: 60px; /* A more appropriate size for an 80px header */
+    height: 60px;
+    /* padding-top is removed, alignment is handled by flexbox */
 }
 
 .logo-text {
-    padding-top: 13px;
+    margin-left: 10px; /* Add space between logo image and text */
+}
+.logo-text h5 {
+    margin: 0; /* Remove default browser margins to allow for perfect vertical alignment */
 }
 
 .notifications {
@@ -111,14 +106,17 @@ body {
 }
 
 .main-content {
-    width: calc(100% - 220px); /* Adjust width to account for sidebar */
+    width: 100%; /* Take full width by default */
     padding: 20px;
-    margin-left: 220px; /* Space for the fixed sidebar */
-    height: calc(100vh - 60px); /* Full height of the container */
+    margin-left: 0; /* No margin by default */
+    height: calc(100vh - 80px); /* Correct height calculation */
     overflow-y: auto; /* Allow scrolling within the main content if needed */
-    transition: margin-left 0.3s ease; /* Smooth transition for main content */
+    transition: margin-left 0.3s ease; /* Smooth transition for main content */    
     margin-top: -10px;
+}
 
+.main-content.shift {
+    margin-left: 200px; /* Push content to the right by the width of the sidebar */
 }
 
 .tile {
@@ -129,63 +127,34 @@ body {
     margin-bottom: 20px;
 }
 
+.tile-header {
+    margin-bottom: 10px; /* Add space below the header row */
+}
+
 .room-name {
-    margin: 10px 0; 
+    margin: 0; /* Remove default margins for alignment */
 }
 
 /* Additional styles for responsiveness */
 @media (max-width: 768px) {
     .sidebar {
         width: 90%; /* Full width on mobile */
-        height: 52%; /* Flexible height */
-        min-height: 200px; /* Minimum height */
-        padding: 15px;
-        /* margin: 0 auto; Center the sidebar on mobile */
-        position: fixed; /* Fix sidebar position */
-        top: 0;
-        left: -100%; /* Hide sidebar off-screen */
-        transition: left 0.3s ease; /* Smooth transition */
-        margin-top: 98px;
+        left: -100%; /* Ensure it's fully hidden on mobile */
     }
 
-    .sidebar.open {
-        left: 0; /* Show sidebar */
+    .main-content.shift {
+        margin-left: 0; /* On mobile, the sidebar overlays, it doesn't push content */
     }
-
     .main-content {
         margin-left: 0; /* No margin on mobile */
         padding: 10px; /* Adjust padding for mobile */
         padding-top: 5px;
     }
 
-    .mlogo-header {
-        width: 80px; 
-        height: 80px;
-        align-items: center;
-        justify-content: center;
-        justify-items: center;
-        margin-left: 80%;
-        margin-top: 3px;
-        padding-top: 10px;
-    }
-
-    .logo-text {
-        padding-top: 13px;
-    }
-
     .rb {
         position: relative;
         margin-right: -10%;
         /* padding-top: 10%; */
-    }
-
-    /* rb adjusted */
-    #rbadmin {
-        margin-right: -28%;
-    }
-
-    #rbclass {
-        margin-right: -28%;
     }
 
     .sp-name {
@@ -196,10 +165,9 @@ body {
 /* Additional styles for radio buttons and toggles */
 .rb {
     position: relative;
-    margin-bottom: 12px;
     font-size: 22px;
     user-select: none;
-    margin-top: 3%;
+    margin: 0; /* Remove all margins for alignment */
 }
 .checkmark {
     height: 25px;
@@ -218,21 +186,13 @@ body {
 .rb:hover .checkmark {
     opacity: 0.8;
 }
-/* rb adjusted */
-#rbadmin {
-    margin-right: -28%;
-}
-
-#rbclass {
-    margin-right: -28%;
-}
 
 .toggle-switch {
     position: relative;
     display: inline-block;
     width: 34px;
     height: 20px;
-    margin: 10px 0; 
+    margin: 0; /* Spacing is now handled by the parent container */
 }
 
 /* Hide default HTML checkbox */
@@ -288,11 +248,18 @@ input:checked + .slider:before {
     border-radius: 50%;
 }
 
+.mic-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 10px 0; /* Add vertical spacing around the control group */
+}
+
 .mic {
     width: 50px;
     height: auto;
     cursor: pointer;
-    padding-top: 6%;
+    margin-bottom: 10px; /* Space between mic and toggle */
 }
 
 .battery-status {
@@ -346,9 +313,9 @@ input:checked + .slider:before {
 .volume-control {
     grid-column: 1 / span 2;
     display: grid;
-    grid-template-columns: 160px 120px; /* Label | Slider */
+    grid-template-columns: 160px 120px; /* Revert to: Fixed Label | Fixed Slider */
     align-items: center;
-    gap: 70px;
+    gap: 70px; /* Revert to original gap */
     margin-top: 5px;
 }
 .master-volume-control {
@@ -369,16 +336,7 @@ input:checked + .slider:before {
 
 .rmtitle {
     white-space: nowrap;
-    text-align: right;
-    padding-right: 10px;
-}
-
-.logo-container {
-    grid-column: 3;
-    grid-row: 1 / span 6;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    text-align: left; /* Left-align all labels for a clean vertical line */
 }
 
 .profile-container {
@@ -428,16 +386,6 @@ input:checked + .slider:before {
         justify-content: space-between;
         align-items: center;
         background-color: #2a2a2a;
-        padding: 10px;
-        position: sticky;
-        top: 0;
-        z-index: 1000; /* Ensure it stays on top */
-    }
-
-    .burger-menu {
-        font-size: 30px;
-        color: white;
-        cursor: pointer;
         margin-top: 10px; /* Adjust margin to position lower */
     }
 
@@ -476,22 +424,7 @@ input:checked + .slider:before {
         width: 120px; /* Fixed width */
         margin: 0; /* Remove margins */
     }
-
-    .mlogo-header {
-        width: 80px; 
-        height: 80px;
-        align-items: center;
-        justify-content: center;
-        justify-items: center;
-        margin-left: 80%;
-        margin-top: 3px;
-        padding-top: 10px;
-    }
-
-    .logo-text {
-        padding-top: 13px;
-    }
-
+    
     .logo-container {
         margin-right: 20%;
     }

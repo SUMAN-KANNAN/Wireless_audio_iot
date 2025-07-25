@@ -5,8 +5,14 @@ itsdangerous==2.1.2
 Jinja2==3.1.2
 MarkupSafe==2.1.3
 Werkzeug==2.3.7
-websockets>=10.0 # For virtual_esp32.py client
+websockets==12.0 # For virtual_esp32.py client
+
+# For robust, production-grade state management
+redis==5.0.1
 
 # Production deployment (optional for development)
 gunicorn>=20.0
 gevent-websocket>=0.10.1
+
+# For mDNS service discovery (makes local development easier)
+zeroconf==0.131.0

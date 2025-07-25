@@ -1,10 +1,19 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 from datetime import timedelta
 from server.sock_instance import sock
-import os
-import json
 from itsdangerous import URLSafeTimedSerializer
 from server.websocket_handlers import register_websocket_routes, get_room_data
+import os
+import logging
+import json
+import socket
+import threading
+from zeroconf import ServiceInfo, Zeroconf
+
+SERVER_PORT = 5000
+
+# Configure basic logging for more structured and informative output
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 app = Flask(__name__)
 sock.init_app(app)
@@ -22,14 +31,48 @@ USER_CREDENTIALS = {
     os.environ.get('USER_USER', 'user'): os.environ.get('USER_PASS', '123')
 }
 
-# This list now controls which rooms appear on the dashboard and which rooms the WebSocket server is aware of.
-# To add a new room, just add a new dictionary here.
-rooms_config = [
-    {'id': 'conferenceRoom', 'name': 'Conference Room', 'switch_id': 'switchConference', 'volume_id': 'volumeConference'},
-    {'id': 'adminRoom', 'name': 'Admin Room', 'switch_id': 'switchAdmin', 'volume_id': 'volumeAdmin'},
-    {'id': 'classRoom', 'name': 'Class Room', 'switch_id': 'switchClass', 'volume_id': 'volumeClass'},
-]
+def load_rooms_config():
+    """Load room configuration from config.json."""
+    try:
+        with open('config.json', 'r', encoding='utf-8') as f:
+            logging.info("Successfully loaded config.json")
+            return json.load(f)
+    except FileNotFoundError:
+        logging.critical("config.json not found! The application will run but no rooms will be available.")
+        return []
+    except json.JSONDecodeError as e:
+        logging.critical(f"config.json is not valid JSON! Error: {e}. The application will run but no rooms will be available.")
+        return []
+
+rooms_config = load_rooms_config()
 register_websocket_routes(sock, app.secret_key, DEVICE_API_KEY, rooms_config)
+
+def get_local_ip():
+    """Find the local IP address of the machine."""
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # Doesn't have to be reachable
+        s.connect(('10.255.255.255', 1))
+        IP = s.getsockname()[0]
+    except Exception:
+        IP = '127.0.0.1'
+    finally:
+        s.close()
+    return IP
+
+def start_mdns_service():
+    """Announce the web service via mDNS."""
+    local_ip = get_local_ip()
+    service_info = ServiceInfo(
+        "_web-audio._tcp.local.",
+        "Wireless Audio Server._web-audio._tcp.local.",
+        addresses=[socket.inet_aton(local_ip)],
+        port=SERVER_PORT,
+        properties={'path': '/'},
+    )
+    zeroconf = Zeroconf()
+    zeroconf.register_service(service_info)
+    logging.info(f"mDNS service 'Wireless Audio Server' registered at {local_ip}:{SERVER_PORT}")
 
 @app.route('/', methods=['GET', 'POST'])
 def login():
@@ -73,4 +116,8 @@ def logout():
     return redirect(url_for('login'))
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    # Start mDNS in a background thread
+    mdns_thread = threading.Thread(target=start_mdns_service, daemon=True)
+    mdns_thread.start()
+    # Run the Flask app
+    app.run(host='0.0.0.0', port=SERVER_PORT, debug=True, use_reloader=False)

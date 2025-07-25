@@ -39,10 +39,10 @@
                     <img src="{{ url_for('static', filename='images/mute.png') }}" alt="muteall"><br>
                     <span class="tooltip-text">Mute All</span>
                 </div>
-                <div class="icon logout" onclick="logout()">
-                    <img src="{{ url_for('static', filename='images/logout.png') }}" alt="logout"><br>
-                    <span class="tooltip-text">Logout</span>
-                </div>
+            </div>
+            <div class="icon logout" onclick="logout()">
+                <img src="{{ url_for('static', filename='images/logout.png') }}" alt="logout"><br>
+                <span class="tooltip-text">Logout</span>
             </div>
         </div>
 
@@ -53,17 +53,19 @@
                 {% for room in rooms %}
                 <div class="col-md-4">
                     <div class="tile" id="{{ room.id }}">
-                        <div class="d-flex justify-content-between">
+                        <div class="d-flex justify-content-between align-items-center tile-header">
                             <h3 class="room-name">{{ room.name }}</h3>
                             <label class="rb">
                               <span class="checkmark"></span>
-                            </label><br>
+                            </label>
                         </div>
-                        <img src="{{ url_for('static', filename='images/muteunmute.png') }}" class="mic" data-room="{{ room.id }}" alt="Mic for {{ room.name }}"><br>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="{{ room.switch_id }}" class="mic-toggle">
-                            <span class="slider round" ></span>
-                        </label>
+                        <div class="mic-controls">
+                            <img src="{{ url_for('static', filename='images/muteunmute.png') }}" class="mic" data-room="{{ room.id }}" alt="Mic for {{ room.name }}">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="{{ room.switch_id }}" class="mic-toggle">
+                                <span class="slider round" ></span>
+                            </label>
+                        </div>
                         <div class="battery-status">
                             <p>Battery: <span class="battery-percentage">--%</span></p>
                             <div class="battery-bar">

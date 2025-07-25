@@ -1,0 +1,24 @@
+[Unit]
+Description=Gunicorn instance to serve the Wireless Audio System
+# This ensures our app starts after the network is ready and Redis is running.
+After=network.target redis-server.service
+
+[Service]
+# Run the service as the 'ubuntu' user, which is standard for EC2.
+User=ubuntu
+# The working directory for our application.
+WorkingDirectory=/home/ubuntu/Wireless_audio_iot
+
+# Set environment variables for the application.
+# IMPORTANT: For true production, these should be managed more securely, but this is a robust start.
+Environment="SECRET_KEY=a-very-strong-and-random-secret-key"
+Environment="DEVICE_API_KEY=a-different-super-secret-key"
+
+# The command to start the Gunicorn server, using the virtual environment.
+ExecStart=/home/ubuntu/Wireless_audio_iot/venv/bin/gunicorn --worker-class geventwebsocket.gunicorn.workers.GeventWebSocketWorker -w 1 --bind 0.0.0.0:5000 app:app
+
+# Automatically restart the service if it crashes.
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
