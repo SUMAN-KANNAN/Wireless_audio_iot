@@ -21,15 +21,15 @@ body {
 
 .burger-menu {
     font-size: 30px;
-    color: #fff;
     cursor: pointer;
+    color: #fff;
 }
 
 .container-fluid {
     display: flex;
-    padding: 20px;
     flex-direction: row; /* Default to row layout */
     height: calc(100vh - 80px); /* Fill remaining space below header */
+    padding: 0; /* Remove padding to allow sidebar to touch the edge */
 }
 
 .sidebar {
@@ -51,6 +51,21 @@ body {
 
 .sidebar.open {
     left: 0; /* Show sidebar when open */
+}
+
+.sidebar .icon {
+    /* This new rule applies to all icons in the sidebar for consistent styling */
+    display: flex;
+    flex-direction: column; /* This is the key: it stacks the image and label vertically */
+    align-items: center;   /* This centers them horizontally */
+    margin: 20px 0;        /* This adds some space between the icons */
+    cursor: pointer;
+}
+
+.sidebar-icon {
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0; /* Prevent icon from shrinking */
 }
 
 /* This rule now correctly styles the logo container in the header */
@@ -78,33 +93,14 @@ body {
 }
 .logo-text h5 {
     margin: 0; /* Remove default browser margins to allow for perfect vertical alignment */
+    white-space: nowrap; /* Prevent text from wrapping */
 }
 
-.notifications {
-    margin-top: 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding-top: 40px;
+.logout-section {
+    width: 100%;
+    padding-bottom: 20px;
 }
-
-.notifications .icon {
-    width: auto;
-    height: auto;
-    margin: 10px 0;
-    border-radius: 50%;
-    cursor: pointer;
-    padding: 25px;
-    position: relative;
-}
-
-.unmute {
-    width: 50px;
-    height: auto;
-    cursor: pointer;
-    margin-left: 15px;
-}
-
+ 
 .main-content {
     width: 100%; /* Take full width by default */
     padding: 20px;
@@ -117,6 +113,13 @@ body {
 
 .main-content.shift {
     margin-left: 200px; /* Push content to the right by the width of the sidebar */
+}
+
+.icon-label {
+    margin-top: 8px;
+    font-size: 14px;
+    text-align: center;
+    color: #ccc;
 }
 
 .tile {
@@ -138,6 +141,7 @@ body {
 /* Additional styles for responsiveness */
 @media (max-width: 768px) {
     .sidebar {
+        width: 250px;
         width: 90%; /* Full width on mobile */
         left: -100%; /* Ensure it's fully hidden on mobile */
     }
@@ -145,6 +149,12 @@ body {
     .main-content.shift {
         margin-left: 0; /* On mobile, the sidebar overlays, it doesn't push content */
     }
+    .main-content {
+        margin-left: 0; /* No margin on mobile */
+        padding: 10px; /* Adjust padding for mobile */
+        padding-top: 5px;
+    }
+
     .main-content {
         margin-left: 0; /* No margin on mobile */
         padding: 10px; /* Adjust padding for mobile */
@@ -160,6 +170,7 @@ body {
     .sp-name {
         padding-left: 10%;
     }
+
 }
 
 /* Additional styles for radio buttons and toggles */
@@ -176,6 +187,7 @@ body {
     border-radius: 50%;
     border: 2px solid #f9f9f9; /* Match border to background */
     display: inline-block; /* Ensure it behaves like a block element */
+    transition: background-color 0.3s ease; /* Add a smooth transition for color changes */
 }
 /* Optional: Add a class to change color when active */
 .checkmark.active {
@@ -334,6 +346,15 @@ input:checked + .slider:before {
     margin: 10px 0; /* Use vertical margin to prevent horizontal overflow */
 }
 
+/* --- UI/UX UPGRADE: Style for master volume in a mixed state --- */
+.volume-slider.indeterminate::-webkit-slider-thumb {
+    background: #999; /* Grey thumb to indicate a mixed/indeterminate state */
+}
+
+.volume-slider.indeterminate::-moz-range-thumb {
+    background: #999;
+}
+
 .rmtitle {
     white-space: nowrap;
     text-align: left; /* Left-align all labels for a clean vertical line */
@@ -389,12 +410,6 @@ input:checked + .slider:before {
         margin-top: 10px; /* Adjust margin to position lower */
     }
 
-    .mlogo {
-        width: 60%; /* Smaller relative width on mobile */
-        max-width: 120px;
-        padding-top: 100px;
-    }
-
     .notifications {
         flex-direction: column; /* Horizontal layout on mobile */
         justify-content: center;
@@ -402,9 +417,10 @@ input:checked + .slider:before {
         gap: 10px;
     }
 
-    .notifications .icon {
-        padding: 5px;
-        margin: 5px;
+    .mlogo {
+        width: 60%; /* Smaller relative width on mobile */
+        max-width: 120px;
+        padding-top: 100px;
     }
 
     .volume-control {
@@ -427,5 +443,29 @@ input:checked + .slider:before {
     
     .logo-container {
         margin-right: 20%;
+    }
+}
+
+.mlogo {
+    width: 80%;
+    max-width: 180px;
+    height: auto;
+    padding-top: 10px;
+}
+
+.notifications {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 40px;
+}
+
+@media (max-width: 768px) {
+    .notifications {
+        flex-direction: column; /* Horizontal layout on mobile */
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 10px;
     }
 }

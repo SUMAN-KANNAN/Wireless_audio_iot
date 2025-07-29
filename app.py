@@ -1,14 +1,16 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 from datetime import timedelta
 from server.sock_instance import sock
-from itsdangerous import URLSafeTimedSerializer
-from server.websocket_handlers import register_websocket_routes, get_room_data
-import os
+from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadTimeSignature
+from server.websocket_handlers import register_websocket_routes, get_room_data, start_device_watchdog
+import sys
 import logging
 import json
+import redis
 import socket
 import threading
 from zeroconf import ServiceInfo, Zeroconf
+import os
 
 SERVER_PORT = 5000
 
@@ -46,6 +48,8 @@ def load_rooms_config():
 
 rooms_config = load_rooms_config()
 register_websocket_routes(sock, app.secret_key, DEVICE_API_KEY, rooms_config)
+# --- INTELLIGENCE UPGRADE: Start the watchdog for immediate disconnect detection ---
+start_device_watchdog()
 
 def get_local_ip():
     """Find the local IP address of the machine."""
@@ -115,7 +119,30 @@ def logout():
     session.pop('user', None)
     return redirect(url_for('login'))
 
+def clear_redis_on_startup(config):
+    """Clear old room state from Redis to ensure a fresh start."""
+    try:
+        r = redis.Redis(decode_responses=True)
+        # Construct the keys to delete based on the rooms in config.json
+        keys_to_delete = [f"room:{room['id']}" for room in config]
+        if keys_to_delete:
+            # The 'delete' command can take multiple keys at once for efficiency
+            deleted_count = r.delete(*keys_to_delete)
+            logging.info(f"Cleared {deleted_count} old room state(s) from Redis for a fresh start.")
+    except redis.exceptions.ConnectionError as e:
+        logging.critical(f"Could not connect to Redis to clear old state. Is Redis running? Error: {e}")
+    except Exception as e:
+        logging.error(f"An unexpected error occurred while clearing Redis: {e}")
+
 if __name__ == '__main__':
+    # --- Production-Ready State Management ---
+    # In development, it's useful to clear old state. In production, you usually want
+    # the state to persist across server restarts. We use an environment variable to control this.
+    if os.environ.get('CLEAR_REDIS_ON_STARTUP', 'True').lower() in ('true', '1', 't'):
+        logging.info("CLEAR_REDIS_ON_STARTUP is True. Clearing old room states from Redis.")
+        clear_redis_on_startup(rooms_config)
+    else:
+        logging.info("CLEAR_REDIS_ON_STARTUP is False. Preserving existing room states in Redis.")
     # Start mDNS in a background thread
     mdns_thread = threading.Thread(target=start_mdns_service, daemon=True)
     mdns_thread.start()

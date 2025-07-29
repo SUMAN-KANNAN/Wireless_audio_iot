@@ -1,23 +1,24 @@
 # Wireless Audio Control System
 
-This project is a complete system for wirelessly streaming audio from a web dashboard to multiple ESP32-based speaker devices. It features real-time control over which rooms are active, volume levels, and provides live status and battery monitoring.
+This project is a complete, real-time system for wirelessly streaming audio from a web dashboard to multiple ESP32-based speaker devices. It features live status monitoring, individual and master volume controls, and a persistent, stateful server backend.
 
-## Features
+## Key Features
 
 - **Web-Based Dashboard:** Control everything from a clean, modern web interface.
 - **Multi-Room Support:** Manage several independent speaker devices (Conference Room, Admin Room, etc.).
 - **Real-Time Audio Streaming:** Toggle microphones on the dashboard to stream audio to selected ESP32 devices with low latency.
-- **Live Status Monitoring:** See at a glance which devices are online, active, or have low battery.
+- **Live Status Monitoring:** A three-color system (Red, Orange, Green) shows the real-time connection and activity status of each device.
 - **Individual & Master Volume Control:** Adjust volume for each room separately or all at once.
-- **Persistent State:** The server remembers the last known state of each room (status, battery, volume).
+- **Persistent State:** The server, powered by Redis, remembers the last known state of each room (status, battery, volume) across browser reloads and server restarts.
 - **Secure Authentication:** Simple login system for the dashboard and token-based authentication for devices.
+- **Intelligent Device Management:** The server automatically handles device disconnections and ensures only one authoritative device can be active per room.
 
 ## System Architecture
 
 The system consists of three main parts:
 
 1.  **Python Flask Server:** The central hub that manages WebSocket connections, handles authentication, serves the web dashboard, and routes data.
-2.  **Web Dashboard (Client):** The front-end interface built with HTML, CSS, and JavaScript. It captures microphone audio and sends it to the server.
+2.  **Web Dashboard (Client):** The front-end interface built with HTML, CSS, and JavaScript. It captures raw microphone audio and sends it to the server for processing.
 3.  **ESP32 Devices (Hardware):** Microcontrollers running custom firmware. They connect to the server via WiFi to receive status commands, audio data, and report their battery levels.
 
 ```
@@ -64,26 +65,34 @@ This allows you to run the dashboard and test it with simulated ESP32 devices wi
     ```
 
 3.  **Install and Run Redis (for State Management):**
-    The server uses Redis to store the state of the rooms. You need to have it running locally. The easiest way on Windows is to use the Windows Subsystem for Linux (WSL).
+    The server uses Redis to store the state of the rooms. This is a separate program that must be running in the background before you start the Flask server.
 
-    - **Install WSL:** Open PowerShell as an Administrator and run:
-      ```powershell
-      wsl --install
-      ```
-      *This may require a system restart.*
-    - **Install Redis on WSL:** After WSL is set up (it usually installs Ubuntu by default), open your Ubuntu terminal and run:
-      ```bash
-      sudo apt update && sudo apt upgrade -y
-      sudo apt install redis-server -y
-      ```
-    - **Start the Redis Service:**
-      ```bash
-      sudo service redis-server start
-      ```
-    *You can now leave this terminal running in the background. Redis will be accessible to your Flask app at `localhost:6379`.*
+    #### On Windows:
+    1.  **Download the Redis installer** from the official repository for Windows releases: https://github.com/tporadowski/redis/releases. Download the latest `.msi` file.
+    2.  **Run the installer.** Follow the prompts.
+        - **Port Number:** When asked for a port number, leave it as the default `6379`. The Python application is configured to connect to this port.
+        - **Max Memory:** When asked to set a max memory limit, you can leave it at the default value (e.g., 100MB). This is a safety feature, and our application uses very little memory.
+        - **PATH:** **Important:** Ensure the box to "Add the Redis installation folder to the PATH environment variable" is checked.
+    3.  **Start the Redis server.** After installation, open a new Command Prompt or PowerShell window and simply run:
+        ```bash
+        redis-server
+        ```
+    *Leave this terminal window open. It is your running Redis database.*
+
+    #### On macOS/Linux (or Windows via WSL):
+    - **On macOS (using Homebrew):**
+        ```bash
+        brew install redis
+        brew services start redis
+        ```
+    - **On Linux (Ubuntu/Debian):**
+        ```bash
+        sudo apt update && sudo apt install redis-server -y
+        sudo service redis-server start
+        ```
 
 4.  **Start the Flask Server:**
-    In the same terminal, run the server. It will show you the local IP address it's running on, which you'll need for the hardware setup.
+    Open a **new terminal** (your Redis server should still be running in the other one). Make sure your Python virtual environment is active (`.\venv\Scripts\activate`). Then run the server:
     ```bash
     python app.py
     ```

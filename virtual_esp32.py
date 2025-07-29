@@ -13,20 +13,8 @@ THIS_ROOM_ID = None
 # This key must match the DEVICE_API_KEY in app.py
 DEVICE_API_KEY = os.environ.get('DEVICE_API_KEY', 'a-very-secret-key-for-devices-only')
 
-AUDIO_ON = False  # Global state to track if the mic is on or off
+AUDIO_ON = False  # Default to OFF. The device should wait for a command from the dashboard to activate.
 CURRENT_BATTERY = 100 # Global state for battery level
-
-async def keyboard_listener():
-    """Listens for keyboard input in a separate thread to toggle the audio state."""
-    global AUDIO_ON
-    loop = asyncio.get_running_loop()
-    print(f"--- Controls for {THIS_ROOM_ID}: Press 'm' then 'Enter' to toggle microphone ON/OFF ---")
-    while True:
-        # Run the blocking input() in a separate thread to avoid freezing the event loop
-        key = await loop.run_in_executor(None, sys.stdin.readline)
-        if 'm' in key:
-            AUDIO_ON = not AUDIO_ON
-            print(f"\n--- Toggled Mic for {THIS_ROOM_ID}. Audio is now {'ON' if AUDIO_ON else 'OFF'} ---\n")
 
 async def send_status(websocket):
     """Sends the device status (Active/Sleep) to the server when it changes."""
@@ -141,6 +129,40 @@ async def send_simulated_audio_message(websocket):
         # Send chunks frequently to simulate real-time streaming, matching the browser's behavior.
         await asyncio.sleep(0.1) # Send every 100ms
 
+async def run_websocket_tasks(audio_ws, status_ws, battery_ws):
+    """Runs all the concurrent tasks for the virtual device and handles cleanup."""
+    # --- BUG FIX: Send identification on ALL channels ---
+    # The server needs to know which room each connection belongs to in order to
+    # correctly route commands (like 'Active'/'Sleep') back to the device.
+    id_message = json.dumps({"type": "room_identification", "roomId": THIS_ROOM_ID})
+
+    await audio_ws.send(id_message)
+    print(f"Sent room identification for {THIS_ROOM_ID} on audio channel.")
+    await status_ws.send(id_message)
+    print(f"Sent room identification for {THIS_ROOM_ID} on status channel.")
+    await battery_ws.send(id_message)
+    print(f"Sent room identification for {THIS_ROOM_ID} on battery channel.")
+
+    tasks = [
+        asyncio.create_task(send_simulated_audio_message(audio_ws)),
+        asyncio.create_task(send_status(status_ws)),
+        asyncio.create_task(send_battery(battery_ws)),
+        asyncio.create_task(receive_commands(audio_ws)),
+        asyncio.create_task(receive_status_commands(status_ws))
+    ]
+
+    try:
+        # Wait for all tasks to complete. If one fails (e.g., due to a closed connection),
+        # asyncio.gather will raise that exception, and we'll move to the finally block.
+        await asyncio.gather(*tasks)
+    finally:
+        # When one task fails, we need to clean up the others.
+        print(f"A task failed or connection closed for {THIS_ROOM_ID}. Cleaning up other tasks.")
+        for task in tasks:
+            task.cancel()
+        # Wait for all tasks to acknowledge cancellation.
+        await asyncio.gather(*tasks, return_exceptions=True)
+
 async def connect_and_simulate():
     # The API key should be sent as a header, not a token in the URL.
     # This matches the behavior of the real ESP32 firmware.
@@ -149,53 +171,30 @@ async def connect_and_simulate():
 
     while True:
         try:
+            # Use 'async with' to robustly manage the lifecycle of all three connections.
+            # If any connection fails to establish, it will raise an exception and be caught below.
             async with websockets.connect(
-                f"{base_uri}/ws/audio",
-                extra_headers=auth_headers,
-                ping_interval=10, ping_timeout=10
-            ) as audio_websocket, \
+                f"{base_uri}/ws/audio", extra_headers=auth_headers
+            ) as audio_ws, \
             websockets.connect(
-                f"{base_uri}/ws/status",
-                extra_headers=auth_headers,
-                ping_interval=10, ping_timeout=10
-            ) as status_websocket, \
+                f"{base_uri}/ws/status", extra_headers=auth_headers
+            ) as status_ws, \
             websockets.connect(
-                f"{base_uri}/ws/battery",
-                extra_headers=auth_headers,
-                ping_interval=10, ping_timeout=10
-            ) as battery_websocket:
-
-                print(f"Connected virtual ESP32 for room: {THIS_ROOM_ID}")
-
-                # Send room identification on the audio channel
-                # --- ARCHITECTURAL ALIGNMENT: Match real firmware ---
-                # The real firmware identifies itself with a 'client_type' field.
-                # The virtual device should do the same for consistency.
-                await audio_websocket.send(json.dumps({"type": "room_identification", "roomId": THIS_ROOM_ID, "client_type": "device"}))
-                print(f"Sent room identification for {THIS_ROOM_ID} on audio channel.")
-
-                tasks = [
-                    asyncio.create_task(keyboard_listener()),
-                    asyncio.create_task(send_simulated_audio_message(audio_websocket)),
-                    asyncio.create_task(send_status(status_websocket)),
-                    asyncio.create_task(send_battery(battery_websocket)),
-                    asyncio.create_task(receive_commands(audio_websocket)),
-                    asyncio.create_task(receive_status_commands(status_websocket))
-                ]
-                done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-                for task in pending:
-                    task.cancel()
-                print(f"One of the connections closed for {THIS_ROOM_ID}. Reconnecting in 5 seconds...")
-                await asyncio.sleep(5)
-
-        except (ConnectionRefusedError, websockets.exceptions.ConnectionClosedError):
-            print(f"Connection refused or closed for {THIS_ROOM_ID}. Retrying in 5 seconds...")
+                f"{base_uri}/ws/battery", extra_headers=auth_headers
+            ) as battery_ws:
+                print(f"All WebSockets connected for room: {THIS_ROOM_ID}")
+                # This function will run until one of the connections fails, which raises an exception.
+                await run_websocket_tasks(audio_ws, status_ws, battery_ws)
+        
+        # --- FIX: Corrected exception handling for modern 'websockets' library ---
+        except (ConnectionRefusedError, websockets.ConnectionClosedError) as e:
+            print(f"Connection refused or closed for {THIS_ROOM_ID}. Reconnecting in 5 seconds...")
             await asyncio.sleep(5)
-        except websockets.exceptions.WebSocketException as e:
+        except websockets.WebSocketException as e:
             print(f"WebSocket error for {THIS_ROOM_ID}: {e}. Retrying in 5 seconds...")
             await asyncio.sleep(5)
         except Exception as e:
-            print(f"Unexpected error for {THIS_ROOM_ID}: {e}. Retrying in 5 seconds...")
+            print(f"An unexpected error occurred for {THIS_ROOM_ID}: {e}. Retrying in 5 seconds...")
             await asyncio.sleep(5)
 
 if __name__ == "__main__":

@@ -4,7 +4,6 @@ let batterySocket;
 
 // --- STATE MANAGEMENT UPGRADE ---
 const roomStates = {}; // Central object to hold the last known state for each room.
-const deviceTimeouts = {}; // Holds timeout IDs to detect disconnected devices.
 
 function updateBatteryDisplay(roomId, percentage) {
     const CRITICAL_LEVEL = 20;
@@ -32,22 +31,6 @@ function updateBatteryDisplay(roomId, percentage) {
             }
         }
     }
-}
-
-function resetDeviceTimeout(roomId) {
-    if (deviceTimeouts[roomId]) {
-        clearTimeout(deviceTimeouts[roomId]);
-    }
-    // Set a timeout for 90 seconds. If it fires, the device is considered disconnected.
-    deviceTimeouts[roomId] = setTimeout(() => {
-        console.warn(`No signal from ${roomId} for 90 seconds. Marking as disconnected.`);
-        if (roomStates[roomId]) {
-            roomStates[roomId].status = 'Disconnected';
-            // Clear battery state on disconnect to ensure UI updates correctly
-            delete roomStates[roomId].battery;
-        }
-        updateTileUI(roomId); // Update the UI to reflect the disconnected state.
-    }, 90000);
 }
 
 function updateTileUI(roomId) {
@@ -97,14 +80,34 @@ function createAuthenticatedSocket(path) {
         window.location.href = '/logout';
         return null;
     }
-    const url = `ws://${window.location.host}${path}?token=${authToken}`;
+    // --- PRODUCTION UPGRADE: Use secure WebSockets (wss) if the page is loaded over https ---
+    // This prevents mixed-content errors in a production environment with SSL.
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const url = `${protocol}//${window.location.host}${path}?token=${authToken}`;
     return new WebSocket(url);
 }
 
-function connectBatteryWebSocket() {
-    batterySocket = createAuthenticatedSocket('/ws/battery');
+function connectWebSocket(path, onMessageCallback) {
+    const socket = createAuthenticatedSocket(path);
+    if (!socket) return;
 
-    batterySocket.onmessage = (event) => {
+    socket.onopen = () => {
+        console.log(`WebSocket connection established for ${path}`);
+    };
+
+    socket.onmessage = onMessageCallback;
+
+    socket.onclose = () => {
+        console.log(`WebSocket for ${path} closed. Reconnecting in 5 seconds...`);
+        setTimeout(() => connectWebSocket(path, onMessageCallback), 5000);
+    };
+
+    socket.onerror = (error) => console.error(`WebSocket error for ${path}:`, error);
+    return socket;
+}
+
+function connectBatteryWebSocket() {
+    const onMessage = (event) => {
         try {
             const data = JSON.parse(event.data);
             if (data.room && data.percentage !== undefined) {
@@ -112,30 +115,16 @@ function connectBatteryWebSocket() {
                 if (!roomStates[data.room]) roomStates[data.room] = {};
                 roomStates[data.room].battery = data.percentage;
                 updateTileUI(data.room);
-                resetDeviceTimeout(data.room);
             }
         } catch (e) {
             console.error("Error parsing battery message:", e);
         }
     };
-
-    batterySocket.onclose = () => {
-        setTimeout(connectBatteryWebSocket, 5000);
-    };
-
-    batterySocket.onerror = (error) => {
-        console.error("Battery WebSocket error:", error);
-    };
+    batterySocket = connectWebSocket('/ws/battery', onMessage);
 }
 
 function connectStatusWebSocket() {
-    statusSocket = createAuthenticatedSocket('/ws/status');
-
-    statusSocket.onopen = () => {
-        console.log("Status WebSocket connection established");
-    };
-
-    statusSocket.onmessage = function(event) {
+    const onMessage = (event) => {
         const data = JSON.parse(event.data);
         const roomId = data.room;
         const newStatus = data.status;
@@ -144,6 +133,13 @@ function connectStatusWebSocket() {
 
         if (!roomStates[roomId]) roomStates[roomId] = {};
         roomStates[roomId].status = newStatus;
+
+        // --- REALISM UPGRADE: Clear battery on disconnect ---
+        // If the device is disconnected, its battery level is now unknown.
+        // This ensures the UI updates immediately to '--%'.
+        if (newStatus === 'Disconnected') {
+            roomStates[roomId].battery = undefined;
+        }
 
         // Sync the toggle's visual state with the reported device status.
         // This ensures the UI is accurate if a status changes from the server-side.
@@ -156,36 +152,15 @@ function connectStatusWebSocket() {
         }
 
         updateTileUI(roomId);
-        resetDeviceTimeout(roomId);
     };
-
-    statusSocket.onclose = () => {
-        setTimeout(connectStatusWebSocket, 5000);
-    };
-
-    statusSocket.onerror = (error) => {
-        console.error("Status WebSocket error:", error);
-    };
+    statusSocket = connectWebSocket('/ws/status', onMessage);
 }
 
 function connectVolumeWebSocket() {
-    volumeSocket = createAuthenticatedSocket('/ws/volume');
-
-    volumeSocket.onopen = () => {
-        console.log("Volume WebSocket connection established");
-    };
-
-    volumeSocket.onmessage = (event) => {
+    const onMessage = (event) => {
         // Handle volume messages from the server if needed
     };
-
-    volumeSocket.onclose = () => {
-        setTimeout(connectVolumeWebSocket, 5000);
-    };
-
-    volumeSocket.onerror = (error) => {
-        console.error("Volume WebSocket error:", error);
-    };
+    volumeSocket = connectWebSocket('/ws/volume', onMessage);
 }
 
 function sendVolumeUpdate() {
@@ -214,10 +189,9 @@ const audioManager = {
     // Higher value = higher latency, more stable on poor networks (e.g., 250ms)
     audioChunkTimeslice: 100, // in milliseconds
     audioContext: null,
-    microphone: null,
-    mediaRecorder: null,
+    microphone: null, // This will be the MediaStreamSource
     mediaStream: null,
-    isMicActive: false,
+    audioWorkletNode: null,
     activeRoomSockets: {}, // { roomId: WebSocket }
 
     async toggleMic(roomId, isTurningOn) {
@@ -256,47 +230,68 @@ const audioManager = {
     },
 
     async activateMicrophone() {
-        if (this.isMicActive) return;
+        if (this.audioContext) return; // Already active
         try {
-            // Request a mono audio stream to match the ESP32's configuration.
-            // This is a key step in preventing distortion.
+            // Request a 16kHz mono audio stream to match the server's processing pipeline.
             this.mediaStream = await navigator.mediaDevices.getUserMedia({ 
-                audio: { channelCount: 1 } 
+                audio: { 
+                    channelCount: 1,
+                    sampleRate: 16000//,
+                    //echoCancellation: true // Enable the browser's built-in AEC
+                } 
             });
-            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)({
+                sampleRate: 16000 // Ensure context sample rate matches
+            });
             this.microphone = this.audioContext.createMediaStreamSource(this.mediaStream);
+            
+            // Load our custom audio processor worklet.
+            await this.audioContext.audioWorklet.addModule('/static/js/audio-processor.js');
+            this.audioWorkletNode = new AudioWorkletNode(this.audioContext, 'audio-processor');
 
-            this.mediaRecorder = new MediaRecorder(this.mediaStream);
+            // Connect the microphone source to our worklet.
+            this.microphone.connect(this.audioWorkletNode);
 
-            this.mediaRecorder.ondataavailable = (event) => {
-                if (event.data.size > 0) {
-                    Object.values(this.activeRoomSockets).forEach(ws => {
-                        if (ws.readyState === WebSocket.OPEN) {
-                            ws.send(event.data);
-                        }
-                    });
-                }
+            // Connect the worklet to the destination to keep it running, even though it produces no sound.
+            this.audioWorkletNode.connect(this.audioContext.destination);
+
+            // Listen for messages (raw audio data) from the worklet.
+            this.audioWorkletNode.port.onmessage = (event) => {
+                // event.data is an ArrayBuffer containing the Int16 PCM data.
+                // Forward this data to all active room sockets.
+                Object.values(this.activeRoomSockets).forEach(ws => {
+                    if (ws.readyState === WebSocket.OPEN) {
+                        ws.send(event.data);
+                    }
+                });
             };
-
-            this.mediaRecorder.start(this.audioChunkTimeslice);
-            this.isMicActive = true;
         } catch (error) {
+            console.error("Error activating microphone:", error);
             alert('Could not access microphone. Please ensure you have granted permission.');
-            this.isMicActive = false;
+            this.deactivateMicrophone(); // Clean up on failure
         }
     },
 
     deactivateMicrophone() {
-        if (this.mediaRecorder && this.mediaRecorder.state !== "inactive") {
-            this.mediaRecorder.stop();
+        // --- FIX: Gracefully tell server to sleep active rooms on unload ---
+        // For every room that was active, send a "Sleep" command. This prevents
+        // the state from being "stuck" on active if the user reloads the page.
+        Object.keys(this.activeRoomSockets).forEach(roomId => {
+            if (statusSocket && statusSocket.readyState === WebSocket.OPEN) {
+                statusSocket.send(JSON.stringify({ room: roomId, status: "Sleep" }));
+            }
+        });
+        if (this.audioWorkletNode) {
+            this.audioWorkletNode.port.onmessage = null;
+            this.audioWorkletNode.port.close();
+            this.audioWorkletNode.disconnect();
+            this.audioWorkletNode = null;
         }
-        if (this.mediaStream) {
-            this.mediaStream.getTracks().forEach(track => track.stop());
-            this.mediaStream = null;
-        }
-        this.isMicActive = false;
-        this.audioContext = null;
-        this.microphone = null;
+        if (this.microphone) this.microphone.disconnect();
+        if (this.mediaStream) this.mediaStream.getTracks().forEach(track => track.stop());
+        if (this.audioContext) this.audioContext.close();
+        this.audioContext = this.microphone = this.mediaStream = null;
+        // The audio sockets are now closed after the sleep command is sent.
         Object.values(this.activeRoomSockets).forEach(ws => {
             if (ws.readyState === WebSocket.OPEN) ws.close();
         });
@@ -304,21 +299,13 @@ const audioManager = {
     }
 };
 
+// --- ROBUSTNESS UPGRADE: Ensure state is cleaned up when the page is closed or reloaded ---
 window.addEventListener('beforeunload', () => {
-    const roomMap = {
-        'switchConference': 'conferenceRoom',
-        'switchAdmin': 'adminRoom',
-        'switchClass': 'classRoom'
-    };
-    Object.entries(roomMap).forEach(([toggleId, roomId]) => {
-        const toggle = document.getElementById(toggleId);
-        if (toggle && !toggle.checked) {
-            if (statusSocket && statusSocket.readyState === WebSocket.OPEN) {
-                statusSocket.send(JSON.stringify({ room: roomId, status: "Sleep" }));
-            }
-        }
-    });
+    // This is the only critical part: tell the server to stop any active streams
+    // that this browser tab was controlling. This function now sends the "Sleep" commands.
     audioManager.deactivateMicrophone();
+
+    // The rest is just cleanup, the browser will close them anyway.
     if (statusSocket && statusSocket.readyState !== WebSocket.CLOSED) {
         statusSocket.close();
     }
@@ -434,15 +421,16 @@ function loadInitialStates() {
                 }
                 // Now update the entire tile's UI based on the loaded state.
                 updateTileUI(roomId);
-                // If the device was connected, start its disconnect timer.
-                if (roomStates[roomId] && roomStates[roomId].status !== 'Disconnected') {
-                    resetDeviceTimeout(roomId);
-                }
             }
             // After setting individual sliders, update the master slider
             updateMasterSliderState();
         })
-        .catch(error => console.error('Error fetching initial room states:', error));
+        .catch(error => {
+            console.error('Error fetching initial room states:', error);
+            // --- UI/UX UPGRADE: Notify user of connection issue ---
+            // Instead of just logging to console, provide user feedback.
+            alert("Could not load initial device states. The server may be unavailable. The page will try to reconnect automatically.");
+        });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -523,5 +511,9 @@ function updateMasterSliderState() {
 
     if (allSame) {
         masterVolumeSlider.value = firstValue;
+        masterVolumeSlider.classList.remove('indeterminate');
+    } else {
+        // If room volumes are not all the same, show the master slider in a mixed state.
+        masterVolumeSlider.classList.add('indeterminate');
     }
 }

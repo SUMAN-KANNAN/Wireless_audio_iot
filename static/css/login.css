@@ -90,9 +90,6 @@ html, body {
       border: none;
       padding: 0 15px;
       font-size: 18px;
-      padding-left: absolute;
-      justify-content: center;
-      align-content: center;
     }
 
     .login-button {
@@ -104,8 +101,6 @@ html, body {
       border: none;
       border-radius: 10px;
       cursor: pointer;
-      align-content: center;
-      
     }
 
     @media (max-width: 768px) {

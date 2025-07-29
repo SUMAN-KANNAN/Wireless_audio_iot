@@ -10,6 +10,11 @@ websockets==12.0 # For virtual_esp32.py client
 # For robust, production-grade state management
 redis==5.0.1
 
+# For audio processing on the server
+# Using stable, widely supported versions to improve compatibility.
+numpy==1.26.4
+scipy==1.13.1
+
 # Production deployment (optional for development)
 gunicorn>=20.0
 gevent-websocket>=0.10.1

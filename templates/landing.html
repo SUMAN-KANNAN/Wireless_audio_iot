@@ -31,18 +31,20 @@
                 <img src="{{ url_for('static', filename='images/mlogo.png') }}" alt="Mosaique Logo" class="mlogo">
             </div> -->
             <div class="notifications">
-                <div class="icon umnute" onclick="unmuteAll()">
-                    <img src="{{ url_for('static', filename='images/unmuteall.png') }}" class="unmute" alt="unmuteall"><br>
-                    <span class="tooltip-text">Unmute All</span>
+                <div class="icon" onclick="unmuteAll()">
+                    <img src="{{ url_for('static', filename='images/unmuteall.png') }}" class="sidebar-icon" alt="Unmute All">
+                    <span class="icon-label">Unmute All</span>
                 </div>
-                <div class="icon mute" onclick="muteAll()">
-                    <img src="{{ url_for('static', filename='images/mute.png') }}" alt="muteall"><br>
-                    <span class="tooltip-text">Mute All</span>
+                <div class="icon" onclick="muteAll()">
+                    <img src="{{ url_for('static', filename='images/mute.png') }}" class="sidebar-icon" alt="Mute All">
+                    <span class="icon-label">Mute All</span>
                 </div>
             </div>
-            <div class="icon logout" onclick="logout()">
-                <img src="{{ url_for('static', filename='images/logout.png') }}" alt="logout"><br>
-                <span class="tooltip-text">Logout</span>
+            <div class="logout-section">
+                <div class="icon" onclick="logout()">
+                    <img src="{{ url_for('static', filename='images/logout.png') }}" class="sidebar-icon" alt="Logout">
+                    <span class="icon-label">Logout</span>
+                </div>
             </div>
         </div>
 
