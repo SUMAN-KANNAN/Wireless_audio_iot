@@ -1,0 +1,14 @@
+[
+    {
+        "id": "conferenceRoom", "name": "Conference Room", 
+        "switch_id": "switchConference", "volume_id": "volumeConference"
+    },
+    {
+        "id": "adminRoom", "name": "Admin Room", 
+        "switch_id": "switchAdmin", "volume_id": "volumeAdmin"
+    },
+    {
+        "id": "classRoom", "name": "Class Room", 
+        "switch_id": "switchClass", "volume_id": "volumeClass"
+    }
+]
